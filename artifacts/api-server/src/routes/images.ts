@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import https from "https";
 import http from "http";
+import jwt from "jsonwebtoken";
 import { ImageModel } from "../lib/mongodb";
 import {
   GetImagesQueryParams,
@@ -8,6 +9,8 @@ import {
   DeleteImageParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireUserAuth } from "../middlewares/auth";
+
+const JWT_SECRET = process.env.JWT_SECRET ?? "aesthetic-wallpapers-secret-key-2026";
 
 const router: IRouter = Router();
 
@@ -100,6 +103,43 @@ router.get("/images/download-proxy", async (req, res): Promise<void> => {
 
   const safeFilename = (filename || "aesthetic.jpg").replace(/[^a-z0-9._\-() ]/gi, "_");
   streamProxy(url, res, safeFilename, 0);
+});
+
+// Stream a TikTok video by image ID — fetches a fresh watermark-free URL on demand
+router.get("/images/:id/video", async (req, res): Promise<void> => {
+  // Accept token from query param since <video> elements can't set Authorization headers
+  const tokenFromQuery = req.query.token as string | undefined;
+  const tokenFromHeader = req.headers.authorization?.slice(7);
+  const token = tokenFromQuery ?? tokenFromHeader;
+
+  if (!token) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  try {
+    jwt.verify(token, JWT_SECRET);
+  } catch {
+    res.status(401).json({ error: "Invalid token" }); return;
+  }
+
+  let img: Awaited<ReturnType<typeof ImageModel.findById>>;
+  try {
+    img = await ImageModel.findById(req.params.id);
+  } catch {
+    res.status(400).json({ error: "Invalid ID" }); return;
+  }
+
+  if (!img) { res.status(404).json({ error: "Not found" }); return; }
+
+  const tiktokUrl = img.tiktokUrl as string | null;
+  if (!tiktokUrl) {
+    res.status(400).json({ error: "No TikTok URL for this item" }); return;
+  }
+
+  try {
+    const info = await getTiktokInfo(tiktokUrl);
+    streamVideoProxy(info.downloadUrl, req.headers.range, res);
+  } catch (err) {
+    if (!res.headersSent) res.status(502).json({ error: `TikTok fetch failed: ${String(err)}` });
+  }
 });
 
 router.post("/images", requireAuth, async (req, res): Promise<void> => {
@@ -202,6 +242,39 @@ function streamProxy(url: string, res: any, filename: string, redirectCount: num
   req.on("error", () => { if (!res.headersSent) res.status(500).json({ error: "Download failed" }); });
   req.setTimeout(30000, () => { req.destroy(); if (!res.headersSent) res.status(500).json({ error: "Timed out" }); });
   req.end();
+}
+
+function streamVideoProxy(url: string, rangeHeader: string | undefined, res: any, redirectCount = 0): void {
+  if (redirectCount > 5) { if (!res.headersSent) res.status(500).json({ error: "Too many redirects" }); return; }
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { if (!res.headersSent) res.status(400).json({ error: "Bad URL" }); return; }
+  const lib = parsed.protocol === "https:" ? https : http;
+  const reqHeaders: Record<string, string> = { "User-Agent": "Mozilla/5.0", Referer: "https://www.tiktok.com/" };
+  if (rangeHeader) reqHeaders.Range = rangeHeader;
+
+  const proxyReq = lib.request(
+    { hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: "GET", headers: reqHeaders },
+    (resp) => {
+      if (resp.statusCode && resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+        streamVideoProxy(resp.headers.location as string, rangeHeader, res, redirectCount + 1);
+        return;
+      }
+      const status = rangeHeader && resp.statusCode === 206 ? 206 : (resp.statusCode ?? 200);
+      if (!res.headersSent) {
+        res.status(status);
+        res.setHeader("Content-Type", resp.headers["content-type"] || "video/mp4");
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cache-Control", "no-cache, no-store");
+        if (resp.headers["content-length"]) res.setHeader("Content-Length", resp.headers["content-length"]);
+        if (resp.headers["content-range"]) res.setHeader("Content-Range", resp.headers["content-range"]);
+      }
+      resp.pipe(res as unknown as NodeJS.WritableStream);
+    }
+  );
+  proxyReq.on("error", () => { if (!res.headersSent) res.status(500).json({ error: "Video stream error" }); });
+  proxyReq.setTimeout(30000, () => { proxyReq.destroy(); if (!res.headersSent) res.status(504).json({ error: "Timed out" }); });
+  proxyReq.end();
 }
 
 async function getTiktokInfo(tiktokUrl: string): Promise<{ downloadUrl: string; thumbnail: string; title: string }> {

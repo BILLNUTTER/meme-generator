@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX, Loader2 } from "lucide-react";
+import {
+  X, Download, ChevronLeft, ChevronRight,
+  Play, Pause, Volume2, VolumeX, Loader2,
+} from "lucide-react";
 import type { Image } from "@workspace/api-client-react/src/generated/api.schemas";
 import { buildProxyUrl, downloadWithProgress } from "@/lib/utils";
 
@@ -18,12 +21,18 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
   const item = items[index];
   const isVideo = item?.type === "tiktok";
   const hasPrev = index > 0;
   const hasNext = index < items.length - 1;
+
+  // Build the streaming URL — backend fetches fresh TikTok URL on demand
+  const videoSrc = isVideo && item?.id
+    ? `${baseUrl}/api/images/${item.id}/video${token ? `?token=${encodeURIComponent(token)}` : ""}`
+    : null;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -40,32 +49,34 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
     return () => window.removeEventListener("keydown", handleKey);
   }, [hasPrev, hasNext, onClose]);
 
+  // Reset video state when navigating
   useEffect(() => {
     setPlaying(false);
     setDlProgress(null);
+    setVideoLoading(false);
     if (videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      videoRef.current.load();
     }
   }, [index]);
 
   const handleDownload = useCallback(async () => {
     if (!item || dlProgress !== null) return;
-    const videoSrc = item.downloadUrl;
     const ext = isVideo ? "mp4" : "jpg";
     const safe = (item.title ?? item.id ?? "file").replace(/[^a-z0-9]/gi, "-").slice(0, 50);
     const name = `${safe}.${ext}`;
 
     try {
-      if (isVideo && videoSrc) {
-        const dlUrl = `${baseUrl}/api/proxy?url=${encodeURIComponent(videoSrc)}`;
-        const resp = await fetch(dlUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      setDlProgress(0);
+      if (isVideo) {
+        // Download via same streaming endpoint with content-disposition override
+        const dlUrl = `${baseUrl}/api/images/${item.id}/video${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+        const resp = await fetch(dlUrl);
         if (!resp.ok || !resp.body) throw new Error("fetch failed");
         const len = Number(resp.headers.get("Content-Length") ?? "0");
         const reader = resp.body.getReader();
         const chunks: Uint8Array[] = [];
         let received = 0;
-        setDlProgress(0);
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -78,7 +89,6 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
         a.download = name;
         a.click();
       } else {
-        setDlProgress(0);
         await downloadWithProgress(
           buildProxyUrl(item.url, name, baseUrl),
           name,
@@ -95,10 +105,8 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
       videoRef.current.play().catch(() => {});
-      setPlaying(true);
     } else {
       videoRef.current.pause();
-      setPlaying(false);
     }
   }, []);
 
@@ -110,7 +118,6 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
-
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
@@ -133,7 +140,7 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Top bar */}
+        {/* ── Top bar ── */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 pt-10 bg-gradient-to-b from-black/80 to-transparent">
           <button
             onClick={onClose}
@@ -153,89 +160,98 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
           </button>
         </div>
 
-        {/* Main content */}
-        <div
-          className="flex-1 flex items-center justify-center overflow-hidden"
-          onClick={isVideo ? togglePlay : undefined}
-        >
-          {isVideo ? (
-            <video
-              ref={videoRef}
-              src={item.downloadUrl ?? item.url}
-              poster={item.thumbnail ?? item.url}
-              className="max-w-full max-h-full object-contain"
-              playsInline
-              muted={muted}
-              onEnded={() => setPlaying(false)}
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-            />
-          ) : (
+        {/* ── Content ── */}
+        {isVideo ? (
+          // Full-screen TikTok video layout
+          <div className="absolute inset-0 flex items-center justify-center" onClick={togglePlay}>
+            {videoSrc && (
+              <video
+                ref={videoRef}
+                key={item.id}
+                src={videoSrc}
+                poster={item.thumbnail ?? item.url}
+                className="w-full h-full object-contain"
+                playsInline
+                muted={muted}
+                preload="metadata"
+                onWaiting={() => setVideoLoading(true)}
+                onCanPlay={() => setVideoLoading(false)}
+                onPlaying={() => { setVideoLoading(false); setPlaying(true); }}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+                onLoadStart={() => setVideoLoading(true)}
+              />
+            )}
+
+            {/* Play/pause overlay */}
+            <AnimatePresence>
+              {(!playing || videoLoading) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                >
+                  <div className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                    {videoLoading
+                      ? <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      : <Play className="w-9 h-9 text-white fill-white ml-1" />}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Mute button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+              className="absolute bottom-24 right-5 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/15 flex items-center justify-center z-10"
+            >
+              {muted ? <VolumeX className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-white" />}
+            </button>
+          </div>
+        ) : (
+          // Image layout — centered, fills available space
+          <div className="absolute inset-0 flex items-center justify-center p-2">
             <img
               src={item.url}
               alt={item.title ?? ""}
               className="max-w-full max-h-full object-contain"
               draggable={false}
             />
-          )}
+          </div>
+        )}
 
-          {/* Video play overlay */}
-          {isVideo && !playing && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                <Play className="w-9 h-9 text-white fill-white ml-1" />
-              </div>
-            </div>
+        {/* ── Bottom info ── */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-5 pb-10 pt-24 pointer-events-none">
+          {item.title && (
+            <p className="text-white font-semibold text-base leading-tight line-clamp-2 mb-0.5">{item.title}</p>
+          )}
+          {item.category && (
+            <p className="text-white/40 text-xs uppercase tracking-wide">{item.category}</p>
           )}
         </div>
 
-        {/* Bottom info + controls */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-5 pb-10 pt-20 flex items-end justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            {item.title && (
-              <p className="text-white font-semibold text-base leading-tight line-clamp-2 mb-0.5">{item.title}</p>
-            )}
-            {item.category && (
-              <p className="text-white/40 text-xs uppercase tracking-wide">{item.category}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {isVideo && (
-              <button
-                onClick={toggleMute}
-                className="w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
-              >
-                {muted
-                  ? <VolumeX className="w-4 h-4 text-white" />
-                  : <Volume2 className="w-4 h-4 text-white" />}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Prev arrow */}
+        {/* ── Navigation arrows ── */}
         {hasPrev && (
           <button
             onClick={() => setIndex(i => i - 1)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform z-10"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
           </button>
         )}
-
-        {/* Next arrow */}
         {hasNext && (
           <button
             onClick={() => setIndex(i => i + 1)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform z-10"
           >
             <ChevronRight className="w-5 h-5 text-white" />
           </button>
         )}
 
-        {/* Download progress bar */}
+        {/* ── Download progress ── */}
         {dlProgress !== null && (
-          <div className="absolute bottom-28 left-1/2 -translate-x-1/2 bg-zinc-900/95 border border-white/10 rounded-2xl px-5 py-2.5 flex items-center gap-3 shadow-xl">
+          <div className="absolute bottom-28 left-1/2 -translate-x-1/2 bg-zinc-900/95 border border-white/10 rounded-2xl px-5 py-2.5 flex items-center gap-3 shadow-xl z-20">
             <div className="w-28 h-1.5 rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-white transition-all duration-200"
