@@ -10,7 +10,7 @@ export interface HealthStatus {
 }
 
 export interface Image {
-  id: number;
+  id: string;
   url: string;
   /** @nullable */
   title?: string | null;

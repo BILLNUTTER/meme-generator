@@ -11,10 +11,12 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
+- **Primary Database**: MongoDB Atlas (via Mongoose) — `MONGO_URI` secret
+- **Secondary Database**: PostgreSQL + Drizzle ORM (still available)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Auth**: JWT (jsonwebtoken) — admin credentials stored in `artifacts/api-server/src/routes/auth.ts`
 
 ## Structure
 

@@ -24,7 +24,7 @@ export const GetImagesQueryParams = zod.object({
 });
 
 export const GetImagesResponseItem = zod.object({
-  id: zod.number(),
+  id: zod.string(),
   url: zod.string(),
   title: zod.string().nullish(),
   category: zod.string(),
@@ -47,7 +47,7 @@ export const CreateImageBody = zod.object({
  * @summary Delete an image
  */
 export const DeleteImageParams = zod.object({
-  id: zod.coerce.number(),
+  id: zod.coerce.string(),
 });
 
 /**

@@ -297,12 +297,12 @@ export const useCreateImage = <
  * Delete an image from the gallery (admin only)
  * @summary Delete an image
  */
-export const getDeleteImageUrl = (id: number) => {
+export const getDeleteImageUrl = (id: string) => {
   return `/api/images/${id}`;
 };
 
 export const deleteImage = async (
-  id: number,
+  id: string,
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDeleteImageUrl(id), {
@@ -318,14 +318,14 @@ export const getDeleteImageMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteImage>>,
     TError,
-    { id: number },
+    { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteImage>>,
   TError,
-  { id: number },
+  { id: string },
   TContext
 > => {
   const mutationKey = ["deleteImage"];
@@ -339,7 +339,7 @@ export const getDeleteImageMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteImage>>,
-    { id: number }
+    { id: string }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -365,14 +365,14 @@ export const useDeleteImage = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteImage>>,
     TError,
-    { id: number },
+    { id: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteImage>>,
   TError,
-  { id: number },
+  { id: string },
   TContext
 > => {
   return useMutation(getDeleteImageMutationOptions(options));
