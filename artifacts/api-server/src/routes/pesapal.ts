@@ -114,7 +114,7 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
       orderTrackingId: orderRes.order_tracking_id || null,
       merchantRef: ref,
       status: "initiated",
-    }).catch(() => {});
+    } as any).catch(() => {});
 
     res.json({
       redirectUrl: orderRes.redirect_url,

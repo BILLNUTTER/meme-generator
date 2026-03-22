@@ -140,7 +140,7 @@ router.get("/images/:id/video", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Invalid token" }); return;
   }
 
-  let img: Awaited<ReturnType<typeof ImageModel.findById>>;
+  let img: InstanceType<typeof ImageModel> | null;
   try {
     img = await ImageModel.findById(req.params.id);
   } catch {
@@ -168,7 +168,7 @@ router.post("/images", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const image = await ImageModel.create(parsed.data);
+  const image = await ImageModel.create(parsed.data as any);
   invalidateImagesCache();
   res.status(201).json(toImageJson(image));
 });

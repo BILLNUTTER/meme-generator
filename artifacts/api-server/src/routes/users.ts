@@ -9,9 +9,9 @@ const router: IRouter = Router();
 function toUserJson(doc: InstanceType<typeof UserModel>) {
   return {
     id: (doc._id as unknown as { toString(): string }).toString(),
-    name: doc.name as string,
-    email: doc.email as string,
-    createdAt: (doc.createdAt as Date).toISOString(),
+    name: (doc.name as unknown as string),
+    email: (doc.email as unknown as string),
+    createdAt: (doc.createdAt as unknown as Date).toISOString(),
   };
 }
 
@@ -33,7 +33,11 @@ router.post("/users/register", async (req, res): Promise<void> => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await UserModel.create({ name, email, password: hashedPassword });
 
-  const token = generateUserToken(user._id.toString(), user.email as string, user.name as string);
+  const token = generateUserToken(
+    (user._id as unknown as { toString(): string }).toString(),
+    (user.email as unknown as string),
+    (user.name as unknown as string),
+  );
   res.status(201).json({ token, user: toUserJson(user) });
 });
 
@@ -52,7 +56,7 @@ router.post("/users/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const valid = await bcrypt.compare(password, user.password as string);
+  const valid = await bcrypt.compare(password, (user.password as unknown as string));
   if (!valid) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
@@ -63,7 +67,11 @@ router.post("/users/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const token = generateUserToken(user._id.toString(), user.email as string, user.name as string);
+  const token = generateUserToken(
+    (user._id as unknown as { toString(): string }).toString(),
+    (user.email as unknown as string),
+    (user.name as unknown as string),
+  );
   res.json({ token, user: toUserJson(user) });
 });
 
