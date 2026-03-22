@@ -51,7 +51,7 @@ export function Dashboard() {
 
   const [tkUrl, setTkUrl] = useState("");
   const [tkLoading, setTkLoading] = useState(false);
-  const [tkResult, setTkResult] = useState<{ videoUrl: string; title: string; thumbnail: string } | null>(null);
+  const [tkResult, setTkResult] = useState<{ downloadUrl: string; title: string; thumbnail: string } | null>(null);
   const [tkError, setTkError] = useState<string | null>(null);
   const [quota, setQuota] = useState(getQuota());
   const [dlProgress, setDlProgress] = useState<number>(0);
@@ -96,9 +96,9 @@ export function Dashboard() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ url: tkUrl }),
       });
-      const d = await resp.json() as { videoUrl?: string; thumbnail?: string; title?: string; error?: string };
-      if (d.videoUrl) {
-        setTkResult({ videoUrl: d.videoUrl, title: d.title ?? "TikTok", thumbnail: d.thumbnail ?? "" });
+      const d = await resp.json() as { downloadUrl?: string; thumbnail?: string; title?: string; error?: string };
+      if (d.downloadUrl) {
+        setTkResult({ downloadUrl: d.downloadUrl, title: d.title ?? "TikTok", thumbnail: d.thumbnail ?? "" });
         setQuota(incrementQuota());
       } else {
         setTkError(d.error ?? "Could not fetch this TikTok. Please check the link.");
@@ -111,7 +111,7 @@ export function Dashboard() {
     if (!tkResult) return;
     setIsDownloading(true); setDlProgress(0);
     try {
-      const resp = await fetch(`${baseUrl}/api/proxy?url=${encodeURIComponent(tkResult.videoUrl)}`, {
+      const resp = await fetch(`${baseUrl}/api/images/download-proxy?url=${encodeURIComponent(tkResult.downloadUrl)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok || !resp.body) throw new Error();

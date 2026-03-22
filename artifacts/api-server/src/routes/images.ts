@@ -83,7 +83,8 @@ router.post("/images/tiktok-info", async (req, res): Promise<void> => {
     const info = await getTiktokInfo(url);
     res.json(info);
   } catch (err) {
-    res.status(400).json({ error: String(err) });
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(400).json({ error: msg });
   }
 });
 
@@ -277,8 +278,65 @@ function streamVideoProxy(url: string, rangeHeader: string | undefined, res: any
   proxyReq.end();
 }
 
-async function getTiktokInfo(tiktokUrl: string): Promise<{ downloadUrl: string; thumbnail: string; title: string }> {
-  const postData = `url=${encodeURIComponent(tiktokUrl)}&count=12&cursor=0&hd=1`;
+// Follow HTTP redirects and return the final URL (for short TikTok links)
+function followRedirect(url: string, maxRedirects = 8): Promise<string> {
+  return new Promise((resolve) => {
+    if (maxRedirects === 0) { resolve(url); return; }
+    let parsed: URL;
+    try { parsed = new URL(url); } catch { resolve(url); return; }
+
+    const lib = parsed.protocol === "https:" ? https : http;
+    const req = lib.request(
+      {
+        hostname: parsed.hostname,
+        path: parsed.pathname + parsed.search,
+        method: "GET",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15",
+          Accept: "text/html,*/*",
+        },
+      },
+      (resp) => {
+        resp.resume(); // drain body so connection closes
+        if (resp.statusCode && resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+          const loc = resp.headers.location;
+          const next = loc.startsWith("http") ? loc : `${parsed.protocol}//${parsed.host}${loc}`;
+          resolve(followRedirect(next, maxRedirects - 1));
+        } else {
+          resolve(url);
+        }
+      }
+    );
+    req.on("error", () => resolve(url));
+    req.setTimeout(8000, () => { req.destroy(); resolve(url); });
+    req.end();
+  });
+}
+
+// Normalise any TikTok link variant to a clean canonical URL
+async function normalizeTiktokUrl(raw: string): Promise<string> {
+  let url = raw.trim();
+  if (!url.startsWith("http")) url = "https://" + url;
+
+  // Short / share links — must resolve redirects first
+  const needsRedirect =
+    /vm\.tiktok\.com|vt\.tiktok\.com|tiktok\.com\/t\/|m\.tiktok\.com|tiktok\.com\/v\//.test(url);
+
+  if (needsRedirect) {
+    url = await followRedirect(url);
+  }
+
+  // Strip query params — tikwm.com chokes on ?lang=, ?_r=, etc.
+  try {
+    const p = new URL(url);
+    url = `${p.protocol}//${p.host}${p.pathname}`.replace(/\/$/, "");
+  } catch { /* keep raw */ }
+
+  return url;
+}
+
+async function callTikwm(url: string): Promise<{ downloadUrl: string; thumbnail: string; title: string }> {
+  const postData = `url=${encodeURIComponent(url)}&count=12&cursor=0&hd=1`;
   const html = await new Promise<string>((resolve, reject) => {
     const req = https.request(
       {
@@ -293,31 +351,49 @@ async function getTiktokInfo(tiktokUrl: string): Promise<{ downloadUrl: string; 
       },
       (resp) => {
         let data = "";
-        resp.on("data", (chunk) => (data += chunk));
+        resp.on("data", (chunk: Buffer) => (data += chunk));
         resp.on("end", () => resolve(data));
       }
     );
     req.on("error", reject);
-    req.setTimeout(15000, () => { req.destroy(); reject(new Error("TikTok API timed out")); });
+    req.setTimeout(18000, () => { req.destroy(); reject(new Error("TikTok API timed out")); });
     req.write(postData);
     req.end();
   });
 
   const json = JSON.parse(html) as {
     code: number;
-    data?: { play?: string; cover?: string; title?: string; wmplay?: string };
+    msg?: string;
+    data?: { play?: string; wmplay?: string; cover?: string; title?: string };
   };
 
   if (json.code !== 0 || !json.data) {
-    throw new Error("Failed to fetch TikTok video info");
+    throw new Error(json.msg ?? `tikwm error code ${json.code}`);
   }
 
   const downloadUrl = json.data.play || json.data.wmplay || "";
-  if (!downloadUrl) throw new Error("No download URL found for this TikTok");
+  if (!downloadUrl) throw new Error("No download URL in tikwm response");
 
   return {
     downloadUrl,
     thumbnail: json.data.cover || "",
     title: json.data.title || "TikTok Video",
   };
+}
+
+async function getTiktokInfo(rawUrl: string): Promise<{ downloadUrl: string; thumbnail: string; title: string }> {
+  const canonical = await normalizeTiktokUrl(rawUrl);
+
+  // First attempt with canonical URL
+  try {
+    return await callTikwm(canonical);
+  } catch (firstErr) {
+    // If canonical is different from raw, also try with the raw URL
+    if (canonical !== rawUrl.trim()) {
+      try {
+        return await callTikwm(rawUrl.trim());
+      } catch { /* fall through to throw first error */ }
+    }
+    throw firstErr;
+  }
 }

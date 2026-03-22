@@ -31,12 +31,14 @@ function incrementQuota() {
   return q;
 }
 
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 export function TikTokDownloadPage() {
   const [, setLocation] = useLocation();
   const { isReady, isAuthenticated } = useUserAuth();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{ videoUrl: string; title: string; thumbnail: string } | null>(null);
+  const [result, setResult] = useState<{ downloadUrl: string; title: string; thumbnail: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quota, setQuota] = useState(getQuota());
   const [dlProgress, setDlProgress] = useState(0);
@@ -56,7 +58,7 @@ export function TikTokDownloadPage() {
     setResult(null);
     setIsLoading(true);
     try {
-      const resp = await fetch("/api/images/tiktok-info", {
+      const resp = await fetch(`${BASE_URL}/api/images/tiktok-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,9 +66,9 @@ export function TikTokDownloadPage() {
         },
         body: JSON.stringify({ url }),
       });
-      const data = await resp.json() as { videoUrl?: string; thumbnail?: string; title?: string; error?: string };
-      if (data.videoUrl) {
-        setResult({ videoUrl: data.videoUrl, title: data.title ?? "TikTok", thumbnail: data.thumbnail ?? "" });
+      const data = await resp.json() as { downloadUrl?: string; thumbnail?: string; title?: string; error?: string };
+      if (data.downloadUrl) {
+        setResult({ downloadUrl: data.downloadUrl, title: data.title ?? "TikTok", thumbnail: data.thumbnail ?? "" });
         const q = incrementQuota();
         setQuota(q);
       } else {
@@ -84,7 +86,7 @@ export function TikTokDownloadPage() {
     setIsDownloading(true);
     setDlProgress(0);
     try {
-      const resp = await fetch(`/api/proxy?url=${encodeURIComponent(result.videoUrl)}`, {
+      const resp = await fetch(`${BASE_URL}/api/images/download-proxy?url=${encodeURIComponent(result.downloadUrl)}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` },
       });
       if (!resp.ok || !resp.body) throw new Error("Download failed");
