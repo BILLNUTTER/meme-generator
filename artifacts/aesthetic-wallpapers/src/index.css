@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Playfair Display', serif;
+
+  --color-background: hsl(0 0% 4%);
+  --color-foreground: hsl(0 0% 98%);
+  
+  --color-card: hsl(0 0% 7%);
+  --color-card-foreground: hsl(0 0% 98%);
+  
+  --color-popover: hsl(0 0% 5%);
+  --color-popover-foreground: hsl(0 0% 98%);
+  
+  --color-primary: hsl(0 0% 98%);
+  --color-primary-foreground: hsl(0 0% 4%);
+  
+  --color-secondary: hsl(0 0% 12%);
+  --color-secondary-foreground: hsl(0 0% 98%);
+  
+  --color-muted: hsl(0 0% 15%);
+  --color-muted-foreground: hsl(0 0% 65%);
+  
+  --color-accent: hsl(0 0% 15%);
+  --color-accent-foreground: hsl(0 0% 98%);
+  
+  --color-destructive: hsl(0 62.8% 30.6%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  
+  --color-border: hsl(0 0% 15%);
+  --color-input: hsl(0 0% 15%);
+  --color-ring: hsl(0 0% 83.1%);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/30 selection:text-primary;
+    /* Beautiful subtle noise texture overlay for luxury feel */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-background/40 backdrop-blur-xl border border-white/5;
+  }
+  
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl;
+  }
+
+  .masonry-grid {
+    column-count: 1;
+    column-gap: 1.5rem;
+  }
+  @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+  @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+  @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
+
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Hide scrollbar for clean aesthetic but allow scroll */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

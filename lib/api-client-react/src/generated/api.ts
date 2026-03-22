@@ -5,18 +5,29 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  CreateImageBody,
+  ErrorResponse,
+  GetImagesParams,
+  HealthStatus,
+  Image,
+  LoginBody,
+  LoginResponse,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +110,357 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Returns all images, optionally filtered by category
+ * @summary List all images
+ */
+export const getGetImagesUrl = (params?: GetImagesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/images?${stringifiedParams}`
+    : `/api/images`;
+};
+
+export const getImages = async (
+  params?: GetImagesParams,
+  options?: RequestInit,
+): Promise<Image[]> => {
+  return customFetch<Image[]>(getGetImagesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetImagesQueryKey = (params?: GetImagesParams) => {
+  return [`/api/images`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetImagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImages>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetImagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetImagesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getImages>>> = ({
+    signal,
+  }) => getImages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImages>>
+>;
+export type GetImagesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all images
+ */
+
+export function useGetImages<
+  TData = Awaited<ReturnType<typeof getImages>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetImagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Add a new image to the gallery (admin only)
+ * @summary Add a new image
+ */
+export const getCreateImageUrl = () => {
+  return `/api/images`;
+};
+
+export const createImage = async (
+  createImageBody: CreateImageBody,
+  options?: RequestInit,
+): Promise<Image> => {
+  return customFetch<Image>(getCreateImageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createImageBody),
+  });
+};
+
+export const getCreateImageMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createImage>>,
+    TError,
+    { data: BodyType<CreateImageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createImage>>,
+  TError,
+  { data: BodyType<CreateImageBody> },
+  TContext
+> => {
+  const mutationKey = ["createImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createImage>>,
+    { data: BodyType<CreateImageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createImage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createImage>>
+>;
+export type CreateImageMutationBody = BodyType<CreateImageBody>;
+export type CreateImageMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Add a new image
+ */
+export const useCreateImage = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createImage>>,
+    TError,
+    { data: BodyType<CreateImageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createImage>>,
+  TError,
+  { data: BodyType<CreateImageBody> },
+  TContext
+> => {
+  return useMutation(getCreateImageMutationOptions(options));
+};
+
+/**
+ * Delete an image from the gallery (admin only)
+ * @summary Delete an image
+ */
+export const getDeleteImageUrl = (id: number) => {
+  return `/api/images/${id}`;
+};
+
+export const deleteImage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteImageUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteImageMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteImage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteImage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteImage>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteImage(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteImage>>
+>;
+
+export type DeleteImageMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete an image
+ */
+export const useDeleteImage = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteImage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteImage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteImageMutationOptions(options));
+};
+
+/**
+ * Authenticate with admin credentials and receive a JWT
+ * @summary Admin login
+ */
+export const getAdminLoginUrl = () => {
+  return `/api/auth/login`;
+};
+
+export const adminLogin = async (
+  loginBody: LoginBody,
+  options?: RequestInit,
+): Promise<LoginResponse> => {
+  return customFetch<LoginResponse>(getAdminLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(loginBody),
+  });
+};
+
+export const getAdminLoginMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: BodyType<LoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: BodyType<LoginBody> },
+  TContext
+> => {
+  const mutationKey = ["adminLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminLogin>>,
+    { data: BodyType<LoginBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminLogin>>
+>;
+export type AdminLoginMutationBody = BodyType<LoginBody>;
+export type AdminLoginMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Admin login
+ */
+export const useAdminLogin = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: BodyType<LoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: BodyType<LoginBody> },
+  TContext
+> => {
+  return useMutation(getAdminLoginMutationOptions(options));
+};

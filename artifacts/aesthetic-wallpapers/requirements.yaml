@@ -1,0 +1,14 @@
+packages:
+  "framer-motion": "For premium smooth animations, page transitions, and the lightbox modal"
+  "clsx": "For merging tailwind classes neatly"
+  "tailwind-merge": "For merging tailwind classes neatly"
+
+images:
+  - path: "artifacts/aesthetic-wallpapers/public/images/admin-bg.png"
+    description: "Deep dark minimal abstract background with very subtle soft white light leaks, luxury and calming, extremely dark, uncluttered, pure aesthetic"
+    aspect_ratio: "16:9"
+
+notes:
+  - We use Wouter for routing
+  - We use Framer Motion for the lightbox and grid entry animations
+  - Authentication token is stored in localStorage and passed to customFetch via request options in generated hooks

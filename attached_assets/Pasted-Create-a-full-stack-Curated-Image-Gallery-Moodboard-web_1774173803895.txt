@@ -1,0 +1,56 @@
+Create a **full-stack** Curated Image Gallery / Moodboard website in Replit with these exact requirements:
+
+- Frontend: ONLY pure HTML + CSS + vanilla JavaScript (no React, no Vue, no frameworks, no build tools)
+- Backend: Node.js + Express.js (minimal, keep it simple)
+- Database: STRICTLY MongoDB Atlas (free tier). DO NOT use Replit Database, @replit/database, or any Replit tokens/secrets for storage.
+- Authentication: Use JWT (jsonwebtoken package) for admin login. Hardcode a simple admin account (username: admin, password: admin123) for demo purposes. JWT secret stored in .env. Store token in localStorage on frontend. Protect /admin route with JWT middleware.
+- Images are stored as direct URLs (admin pastes links — no file upload to server)
+
+Main features:
+- Public homepage (/): beautiful responsive masonry/Pinterest-style grid (use CSS columns or grid masonry). Images load dynamically from backend API /api/images
+- Subtle hover zoom + shadow on each image
+- Click any image → full-screen lightbox modal (close ×, Download button that forces download, left/right arrows)
+- Dark mode by default (deep black/gray background, clean white text) — premium wallpaper/moodboard feel
+- Mobile-first (images stack nicely on phones)
+- Minimal header with site title + "Admin" link (only visible after login or always shown but protected)
+- Optional simple category tabs (Nature, Minimalism, Cars, Anime, Quotes, Vaporwave) — filter the grid via JS
+- Lazy loading (loading="lazy"), smooth fade-ins on load
+
+Admin Dashboard (/admin):
+- Simple login form (username + password)
+- After successful JWT login: clean form to paste Image URL + optional Title + Category
+- "Add Image" button → POST to backend → saves to MongoDB
+- List of all current images with Delete button
+- Logout button
+
+Extra nice-to-have (keep everything simple & clean):
+- Lazy loading + smooth transitions
+- Footer: "Curated by [YourName]" + current year
+- Beautiful fonts: Google Fonts (Inter for body + Playfair Display for headings)
+- Seed the database on first run with 10–12 high-quality placeholder images from Unsplash/Pexels (nature, cars, minimalism, anime style)
+
+Project structure (Replit must create exactly this):
+- index.html          (public gallery page)
+- admin.html          (admin dashboard page)
+- style.css
+- script.js           (all frontend logic: fetch images, lightbox, JWT handling, filters)
+- server.js           (Express server, MongoDB connection, JWT routes, /api/images, /admin/* routes)
+- .env.example        (show MONGO_URI and JWT_SECRET)
+- package.json
+
+Important instructions for Replit:
+- Use Express + mongoose or native MongoDB driver (mongoose is fine and easier)
+- Serve static files (html/css/js) from public folder or directly
+- CORS enabled for frontend
+- Run on port 3000 (Replit default)
+- On first start, automatically connect to MongoDB and seed initial images if collection is empty
+- After creation, tell me exactly:
+  1. How to create a free MongoDB Atlas cluster and get the connection string
+  2. Where to paste it in Replit Secrets (as MONGO_URI)
+  3. How to set JWT_SECRET
+  4. How to run the app
+  5. How to add new images (go to /admin, login with admin/admin123, paste links)
+
+Make the entire site look extremely aesthetic, calming, high-end moodboard style — perfect for wallpapers, nature, minimalism, cars, anime collections. Use modern CSS (variables, glassmorphism subtle accents if it looks premium).
+
+After building, show a live preview link and give clear step-by-step setup instructions for MongoDB + first login.

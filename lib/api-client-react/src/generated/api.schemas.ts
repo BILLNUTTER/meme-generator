@@ -8,3 +8,36 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface Image {
+  id: number;
+  url: string;
+  /** @nullable */
+  title?: string | null;
+  category: string;
+  createdAt: string;
+}
+
+export interface CreateImageBody {
+  url: string;
+  /** @nullable */
+  title?: string | null;
+  category: string;
+}
+
+export interface LoginBody {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+}
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export type GetImagesParams = {
+  category?: string;
+};

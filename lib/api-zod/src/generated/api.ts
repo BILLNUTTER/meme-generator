@@ -14,3 +14,51 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns all images, optionally filtered by category
+ * @summary List all images
+ */
+export const GetImagesQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+});
+
+export const GetImagesResponseItem = zod.object({
+  id: zod.number(),
+  url: zod.string(),
+  title: zod.string().nullish(),
+  category: zod.string(),
+  createdAt: zod.date(),
+});
+export const GetImagesResponse = zod.array(GetImagesResponseItem);
+
+/**
+ * Add a new image to the gallery (admin only)
+ * @summary Add a new image
+ */
+export const CreateImageBody = zod.object({
+  url: zod.string(),
+  title: zod.string().nullish(),
+  category: zod.string(),
+});
+
+/**
+ * Delete an image from the gallery (admin only)
+ * @summary Delete an image
+ */
+export const DeleteImageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * Authenticate with admin credentials and receive a JWT
+ * @summary Admin login
+ */
+export const AdminLoginBody = zod.object({
+  username: zod.string(),
+  password: zod.string(),
+});
+
+export const AdminLoginResponse = zod.object({
+  token: zod.string(),
+});

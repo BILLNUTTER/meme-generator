@@ -6,4 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./createImageBody";
+export * from "./errorResponse";
+export * from "./getImagesParams";
 export * from "./healthStatus";
+export * from "./image";
+export * from "./loginBody";
+export * from "./loginResponse";
