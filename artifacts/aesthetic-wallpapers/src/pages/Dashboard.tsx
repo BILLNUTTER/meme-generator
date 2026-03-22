@@ -5,8 +5,10 @@ import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Lightbox } from "@/components/Lightbox";
+import { TikTokPlayer } from "@/components/TikTokPlayer";
+import { DownloadProgressBar, type DownloadItem } from "@/components/DownloadProgressBar";
 import { useUserAuth } from "@/hooks/use-user-auth";
-import { cn, forceDownload } from "@/lib/utils";
+import { cn, downloadWithProgress, buildProxyUrl } from "@/lib/utils";
 import { LogOut, Download, MessageCircle, Image as ImageIcon, Laugh, Music, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -21,17 +23,26 @@ const TYPE_TABS = [
 
 type TabId = (typeof TYPE_TABS)[number]["id"];
 
+interface TikTokPlayerState {
+  isOpen: boolean;
+  tiktokUrl: string;
+  thumbnailUrl: string;
+  title: string;
+}
+
+const EMPTY_PLAYER: TikTokPlayerState = { isOpen: false, tiktokUrl: "", thumbnailUrl: "", title: "" };
+
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, token, isReady, isAuthenticated, logout } = useUserAuth();
 
-  useEffect(() => {
-    if (isReady && !isAuthenticated) setLocation("/login");
-  }, [isReady, isAuthenticated, setLocation]);
-
   const [activeType, setActiveType]         = useState<TabId>("all");
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxState, setLightboxState]   = useState({ isOpen: false, index: 0 });
+  const [player, setPlayer]                 = useState<TikTokPlayerState>(EMPTY_PLAYER);
+  const [downloads, setDownloads]           = useState<DownloadItem[]>([]);
+
+  const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const queryParams: Record<string, string> = {};
   if (activeType !== "all") queryParams.type = activeType;
@@ -39,38 +50,49 @@ export default function Dashboard() {
 
   const { data: images = [], isLoading, error } = useGetDashboardImages(
     Object.keys(queryParams).length ? queryParams : undefined,
-    { request: { headers: { Authorization: `Bearer ${token}` } }, query: { enabled: !!token } }
+    { request: { headers: { Authorization: `Bearer ${token}` } }, query: { enabled: !!token && isAuthenticated } }
   );
 
-  const tiktokImages   = images.filter(img => img.type === "tiktok");
-  const galleryImages  = images.filter(img => img.type !== "tiktok");
-
-  const openLightbox    = (index: number) => setLightboxState({ isOpen: true, index });
-  const closeLightbox   = () => setLightboxState(prev => ({ ...prev, isOpen: false }));
-  const navigateLightbox = (index: number) => setLightboxState(prev => ({ ...prev, index }));
-
-  const handleTikTokDownload = async (tiktokUrl: string, title: string) => {
-    try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const resp = await fetch(`${baseUrl}/api/images/tiktok-info`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: tiktokUrl }),
-      });
-      const data = await resp.json() as { downloadUrl?: string };
-      if (data.downloadUrl) {
-        const a = document.createElement("a");
-        a.href = data.downloadUrl;
-        a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.mp4`;
-        a.target = "_blank";
-        a.click();
-      }
-    } catch {
-      window.open(tiktokUrl, "_blank");
-    }
-  };
+  useEffect(() => {
+    if (isReady && !isAuthenticated) setLocation("/login");
+  }, [isReady, isAuthenticated, setLocation]);
 
   if (!isReady || !isAuthenticated) return null;
+
+  const tiktokImages  = images.filter(img => img.type === "tiktok");
+  const galleryImages = images.filter(img => img.type !== "tiktok");
+
+  const openLightbox     = (index: number) => setLightboxState({ isOpen: true, index });
+  const closeLightbox    = () => setLightboxState(prev => ({ ...prev, isOpen: false }));
+  const navigateLightbox = (index: number) => setLightboxState(prev => ({ ...prev, index }));
+
+  const startDownload = (rawUrl: string, filename: string) => {
+    const id = `dl-${Date.now()}-${Math.random()}`;
+    const proxyUrl = buildProxyUrl(rawUrl, filename, BASE_URL);
+
+    setDownloads(prev => [...prev, { id, filename, progress: 0, done: false }]);
+
+    downloadWithProgress(proxyUrl, filename, (progress) => {
+      setDownloads(prev =>
+        prev.map(d => d.id === id ? { ...d, progress: progress === -1 ? -1 : Math.min(progress, 99) } : d)
+      );
+    })
+      .then(() => {
+        setDownloads(prev => prev.map(d => d.id === id ? { ...d, progress: 100, done: true } : d));
+        setTimeout(() => setDownloads(prev => prev.filter(d => d.id !== id)), 4000);
+      })
+      .catch(() => {
+        setDownloads(prev => prev.map(d => d.id === id ? { ...d, error: true, done: true } : d));
+        setTimeout(() => setDownloads(prev => prev.filter(d => d.id !== id)), 4000);
+      });
+  };
+
+  const handleTikTokDownload = (videoUrl: string, title: string) => {
+    const filename = `${(title || "tiktok").replace(/[^a-z0-9]/gi, "_")}.mp4`;
+    startDownload(videoUrl, filename);
+  };
+
+  const dismissDownload = (id: string) => setDownloads(prev => prev.filter(d => d.id !== id));
 
   return (
     <div className="min-h-screen flex flex-col pt-20 bg-background">
@@ -105,7 +127,7 @@ export default function Dashboard() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
 
-        {/* ── Type Tabs ── */}
+        {/* Type Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -169,7 +191,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* ── TikTok Grid ── */}
+            {/* TikTok Grid */}
             {tiktokImages.length > 0 && (
               <section className="mb-14">
                 {activeType === "all" && (
@@ -186,7 +208,16 @@ export default function Dashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.3) }}
-                        className="relative group rounded-2xl overflow-hidden aspect-[9/16] bg-white/5"
+                        className="relative group rounded-2xl overflow-hidden aspect-[9/16] bg-white/5 cursor-pointer"
+                        onClick={() =>
+                          img.tiktokUrl &&
+                          setPlayer({
+                            isOpen: true,
+                            tiktokUrl: img.tiktokUrl,
+                            thumbnailUrl: img.url,
+                            title: img.title || "TikTok",
+                          })
+                        }
                       >
                         <img
                           src={img.url}
@@ -196,35 +227,19 @@ export default function Dashboard() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
-                        {/* Play icon center */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/25 transition-colors">
+                        {/* Play icon */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
                             <Play className="w-6 h-6 text-white fill-white ml-0.5" />
                           </div>
                         </div>
 
-                        {/* Bottom actions */}
-                        <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col gap-2">
-                          <p className="text-white text-xs font-medium line-clamp-2">{img.title || "TikTok"}</p>
-                          <div className="flex gap-2">
-                            {img.tiktokUrl && (
-                              <a
-                                href={img.tiktokUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 text-center bg-white/15 backdrop-blur-sm text-white text-xs py-1.5 rounded-lg hover:bg-white/25 transition-colors"
-                                onClick={e => e.stopPropagation()}
-                              >
-                                Watch
-                              </a>
-                            )}
-                            <button
-                              onClick={() => img.tiktokUrl && handleTikTokDownload(img.tiktokUrl, img.title || "tiktok")}
-                              className="flex-1 flex items-center justify-center gap-1 bg-pink-500/80 backdrop-blur-sm text-white text-xs py-1.5 rounded-lg hover:bg-pink-500 transition-colors"
-                            >
-                              <Download className="w-3 h-3" /> Save
-                            </button>
-                          </div>
+                        {/* Title + tap hint */}
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <p className="text-white text-xs font-medium line-clamp-2 mb-1.5">
+                            {img.title || "TikTok"}
+                          </p>
+                          <p className="text-white/40 text-[10px]">Tap to watch &amp; download</p>
                         </div>
                       </motion.div>
                     ))}
@@ -233,7 +248,7 @@ export default function Dashboard() {
               </section>
             )}
 
-            {/* ── Masonry Grid (wallpapers + memes) ── */}
+            {/* Masonry Grid (wallpapers + memes) */}
             {galleryImages.length > 0 && (
               <section>
                 {activeType === "all" && tiktokImages.length > 0 && (
@@ -281,7 +296,8 @@ export default function Dashboard() {
                               className="bg-white/10 hover:bg-white text-white hover:text-black rounded-full w-9 h-9 shrink-0 translate-y-3 group-hover:translate-y-0 transition-all duration-500 delay-100"
                               onClick={e => {
                                 e.stopPropagation();
-                                forceDownload(img.url, img.title ? `${img.title}.jpg` : `aw-${img.id}.jpg`);
+                                const fname = img.title ? `${img.title}.jpg` : `aw-${img.id}.jpg`;
+                                startDownload(img.url, fname);
                               }}
                             >
                               <Download className="w-4 h-4" />
@@ -307,6 +323,17 @@ export default function Dashboard() {
         onClose={closeLightbox}
         onNavigate={navigateLightbox}
       />
+
+      <TikTokPlayer
+        isOpen={player.isOpen}
+        tiktokUrl={player.tiktokUrl}
+        thumbnailUrl={player.thumbnailUrl}
+        title={player.title}
+        onClose={() => setPlayer(EMPTY_PLAYER)}
+        onDownload={handleTikTokDownload}
+      />
+
+      <DownloadProgressBar downloads={downloads} onDismiss={dismissDownload} />
     </div>
   );
 }

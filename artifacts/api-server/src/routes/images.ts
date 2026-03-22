@@ -84,6 +84,24 @@ router.post("/images/tiktok-info", async (req, res): Promise<void> => {
   }
 });
 
+// Proxy-download any external URL (bypasses CORS for images + TikTok videos)
+router.get("/images/download-proxy", async (req, res): Promise<void> => {
+  const { url, filename } = req.query as { url?: string; filename?: string };
+  if (!url) { res.status(400).json({ error: "url required" }); return; }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("bad protocol");
+  } catch {
+    res.status(400).json({ error: "Invalid URL" });
+    return;
+  }
+
+  const safeFilename = (filename || "aesthetic.jpg").replace(/[^a-z0-9._\-() ]/gi, "_");
+  streamProxy(url, res, safeFilename, 0);
+});
+
 router.post("/images", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateImageBody.safeParse(req.body);
   if (!parsed.success) {
@@ -160,6 +178,30 @@ async function resolvePinterestUrl(pinUrl: string): Promise<string> {
   if (ogMatch?.[1]) return ogMatch[1].replace(/&amp;/g, "&");
 
   throw new Error("Could not extract image from Pinterest URL. Try pasting the direct image URL instead.");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function streamProxy(url: string, res: any, filename: string, redirectCount: number): void {
+  if (redirectCount > 5) { if (!res.headersSent) res.status(500).json({ error: "Too many redirects" }); return; }
+  const parsed = new URL(url);
+  const lib = parsed.protocol === "https:" ? https : http;
+  const req = lib.request(
+    { hostname: parsed.hostname, path: parsed.pathname + parsed.search, method: "GET", headers: { "User-Agent": "Mozilla/5.0" } },
+    (resp) => {
+      if (resp.statusCode && resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+        streamProxy(resp.headers.location as string, res, filename, redirectCount + 1);
+        return;
+      }
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Type", resp.headers["content-type"] || "application/octet-stream");
+      if (resp.headers["content-length"]) res.setHeader("Content-Length", resp.headers["content-length"]);
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      resp.pipe(res as unknown as NodeJS.WritableStream);
+    }
+  );
+  req.on("error", () => { if (!res.headersSent) res.status(500).json({ error: "Download failed" }); });
+  req.setTimeout(30000, () => { req.destroy(); if (!res.headersSent) res.status(500).json({ error: "Timed out" }); });
+  req.end();
 }
 
 async function getTiktokInfo(tiktokUrl: string): Promise<{ downloadUrl: string; thumbnail: string; title: string }> {
