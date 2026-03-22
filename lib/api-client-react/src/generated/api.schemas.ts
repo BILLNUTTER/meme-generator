@@ -15,6 +15,7 @@ export interface Image {
   /** @nullable */
   title?: string | null;
   category: string;
+  destination: string;
   createdAt: string;
 }
 
@@ -23,9 +24,10 @@ export interface CreateImageBody {
   /** @nullable */
   title?: string | null;
   category: string;
+  destination: string;
 }
 
-export interface LoginBody {
+export interface AdminLoginBody {
   username: string;
   password: string;
 }
@@ -34,10 +36,37 @@ export interface LoginResponse {
   token: string;
 }
 
+export interface RegisterBody {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface UserLoginBody {
+  email: string;
+  password: string;
+}
+
+export interface UserRecord {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface UserLoginResponse {
+  token: string;
+  user: UserRecord;
+}
+
 export interface ErrorResponse {
   error: string;
 }
 
 export type GetImagesParams = {
+  category?: string;
+};
+
+export type GetDashboardImagesParams = {
   category?: string;
 };

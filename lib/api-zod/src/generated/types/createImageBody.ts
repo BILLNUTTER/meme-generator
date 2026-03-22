@@ -11,4 +11,5 @@ export interface CreateImageBody {
   /** @nullable */
   title?: string | null;
   category: string;
+  destination: string;
 }

@@ -11,9 +11,10 @@ interface LightboxProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
+  onDownloadClick?: (image: Image) => void;
 }
 
-export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: LightboxProps) {
+export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate, onDownloadClick }: LightboxProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
@@ -36,6 +37,10 @@ export function Lightbox({ images, currentIndex, isOpen, onClose, onNavigate }: 
 
   const handleDownload = () => {
     if (!currentImage) return;
+    if (onDownloadClick) {
+      onDownloadClick(currentImage);
+      return;
+    }
     const filename = currentImage.title 
       ? `${currentImage.title.toLowerCase().replace(/\s+/g, '-')}.jpg` 
       : `aesthetic-${currentImage.id}.jpg`;

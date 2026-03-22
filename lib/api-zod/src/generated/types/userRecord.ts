@@ -6,12 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Image {
+export interface UserRecord {
   id: string;
-  url: string;
-  /** @nullable */
-  title?: string | null;
-  category: string;
-  destination: string;
+  name: string;
+  email: string;
   createdAt: Date;
 }

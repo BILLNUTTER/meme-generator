@@ -18,8 +18,19 @@ const imageSchema = new mongoose.Schema(
     url: { type: String, required: true },
     title: { type: String, default: null },
     category: { type: String, required: true, default: "Nature" },
+    destination: { type: String, required: true, default: "landing", enum: ["landing", "dashboard", "both"] },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true },
   },
   { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );
 
 export const ImageModel = mongoose.model("Image", imageSchema);
+export const UserModel = mongoose.model("User", userSchema);

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { AdminLoginBody, AdminLoginResponse } from "@workspace/api-zod";
-import { generateToken } from "../middlewares/auth";
+import { generateAdminToken } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -21,7 +21,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const token = generateToken(username);
+  const token = generateAdminToken(username);
   res.json(AdminLoginResponse.parse({ token }));
 });
 

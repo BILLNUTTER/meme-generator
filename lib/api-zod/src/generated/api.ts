@@ -8,7 +8,6 @@
 import * as zod from "zod";
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -16,8 +15,7 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Returns all images, optionally filtered by category
- * @summary List all images
+ * @summary List public landing page images
  */
 export const GetImagesQueryParams = zod.object({
   category: zod.coerce.string().optional(),
@@ -28,30 +26,48 @@ export const GetImagesResponseItem = zod.object({
   url: zod.string(),
   title: zod.string().nullish(),
   category: zod.string(),
+  destination: zod.string(),
   createdAt: zod.date(),
 });
 export const GetImagesResponse = zod.array(GetImagesResponseItem);
 
 /**
- * Add a new image to the gallery (admin only)
- * @summary Add a new image
+ * @summary Add a new image (admin only)
  */
 export const CreateImageBody = zod.object({
   url: zod.string(),
   title: zod.string().nullish(),
   category: zod.string(),
+  destination: zod.string(),
 });
 
 /**
- * Delete an image from the gallery (admin only)
- * @summary Delete an image
+ * @summary List all images for logged-in users
+ */
+export const GetDashboardImagesQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+});
+
+export const GetDashboardImagesResponseItem = zod.object({
+  id: zod.string(),
+  url: zod.string(),
+  title: zod.string().nullish(),
+  category: zod.string(),
+  destination: zod.string(),
+  createdAt: zod.date(),
+});
+export const GetDashboardImagesResponse = zod.array(
+  GetDashboardImagesResponseItem,
+);
+
+/**
+ * @summary Delete an image (admin only)
  */
 export const DeleteImageParams = zod.object({
   id: zod.coerce.string(),
 });
 
 /**
- * Authenticate with admin credentials and receive a JWT
  * @summary Admin login
  */
 export const AdminLoginBody = zod.object({
@@ -62,3 +78,41 @@ export const AdminLoginBody = zod.object({
 export const AdminLoginResponse = zod.object({
   token: zod.string(),
 });
+
+/**
+ * @summary Register a new user
+ */
+export const RegisterUserBody = zod.object({
+  name: zod.string(),
+  email: zod.string(),
+  password: zod.string(),
+});
+
+/**
+ * @summary User login
+ */
+export const LoginUserBody = zod.object({
+  email: zod.string(),
+  password: zod.string(),
+});
+
+export const LoginUserResponse = zod.object({
+  token: zod.string(),
+  user: zod.object({
+    id: zod.string(),
+    name: zod.string(),
+    email: zod.string(),
+    createdAt: zod.date(),
+  }),
+});
+
+/**
+ * @summary List all registered users (admin only)
+ */
+export const GetAdminUsersResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  createdAt: zod.date(),
+});
+export const GetAdminUsersResponse = zod.array(GetAdminUsersResponseItem);

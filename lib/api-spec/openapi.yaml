@@ -13,13 +13,16 @@ tags:
     description: Image gallery operations
   - name: auth
     description: Authentication operations
+  - name: users
+    description: User operations
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -31,8 +34,7 @@ paths:
     get:
       operationId: getImages
       tags: [images]
-      summary: List all images
-      description: Returns all images, optionally filtered by category
+      summary: List public landing page images
       parameters:
         - name: category
           in: query
@@ -51,8 +53,7 @@ paths:
     post:
       operationId: createImage
       tags: [images]
-      summary: Add a new image
-      description: Add a new image to the gallery (admin only)
+      summary: Add a new image (admin only)
       requestBody:
         required: true
         content:
@@ -78,12 +79,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /images/dashboard:
+    get:
+      operationId: getDashboardImages
+      tags: [images]
+      summary: List all images for logged-in users
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: All images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Image"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /images/{id}:
     delete:
       operationId: deleteImage
       tags: [images]
-      summary: Delete an image
-      description: Delete an image from the gallery (admin only)
+      summary: Delete an image (admin only)
       parameters:
         - name: id
           in: path
@@ -110,13 +136,12 @@ paths:
       operationId: adminLogin
       tags: [auth]
       summary: Admin login
-      description: Authenticate with admin credentials and receive a JWT
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginBody"
+              $ref: "#/components/schemas/AdminLoginBody"
       responses:
         "200":
           description: Login successful
@@ -126,6 +151,74 @@ paths:
                 $ref: "#/components/schemas/LoginResponse"
         "401":
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/register:
+    post:
+      operationId: registerUser
+      tags: [users]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserLoginResponse"
+        "400":
+          description: Invalid input or email taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/login:
+    post:
+      operationId: loginUser
+      tags: [users]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserLoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /admin/users:
+    get:
+      operationId: getAdminUsers
+      tags: [admin]
+      summary: List all registered users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserRecord"
+        "401":
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -150,6 +243,8 @@ components:
           type: ["string", "null"]
         category:
           type: string
+        destination:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -157,6 +252,7 @@ components:
         - id
         - url
         - category
+        - destination
         - createdAt
     CreateImageBody:
       type: object
@@ -167,10 +263,13 @@ components:
           type: ["string", "null"]
         category:
           type: string
+        destination:
+          type: string
       required:
         - url
         - category
-    LoginBody:
+        - destination
+    AdminLoginBody:
       type: object
       properties:
         username:
@@ -187,6 +286,56 @@ components:
           type: string
       required:
         - token
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+    UserLoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    UserLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserRecord"
+      required:
+        - token
+        - user
+    UserRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - createdAt
     ErrorResponse:
       type: object
       properties:

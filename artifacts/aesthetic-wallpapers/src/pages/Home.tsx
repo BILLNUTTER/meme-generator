@@ -1,16 +1,21 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetImages } from "@workspace/api-client-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Lightbox } from "@/components/Lightbox";
 import { cn } from "@/lib/utils";
+import { MessageCircle, Lock } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const CATEGORIES = ["All", "Nature", "Minimalism", "Cars", "Anime", "Quotes", "Vaporwave"];
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxState, setLightboxState] = useState({ isOpen: false, index: 0 });
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   // Fetch images based on category filter
   const { data: images = [], isLoading, error } = useGetImages(
@@ -21,20 +26,47 @@ export default function Home() {
   const closeLightbox = () => setLightboxState(prev => ({ ...prev, isOpen: false }));
   const navigateLightbox = (index: number) => setLightboxState(prev => ({ ...prev, index }));
 
+  const handleDownloadRestricted = () => {
+    setShowAuthDialog(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col pt-20">
+      {/* Sticky Banner */}
+      <div className="fixed top-20 left-0 right-0 z-30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent backdrop-blur-md border-b border-primary/10">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-4 text-sm font-medium">
+          <span>✅ Join free to download all memes and wallpapers</span>
+          <Link href="/register" className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs hover:bg-primary/90 transition-colors">
+            Register Now
+          </Link>
+        </div>
+      </div>
+
       <Header />
       
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 mt-8">
+        {/* WhatsApp Strip */}
+        <div className="mb-12 max-w-2xl mx-auto">
+          <a 
+            href="https://whatsapp.com/channel/0029Vb6rOQtEAKW7qpF7w50d" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 py-3 px-6 rounded-2xl transition-colors duration-300 w-full font-medium"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="tracking-wide">📢 Follow us on WhatsApp for daily memes →</span>
+          </a>
+        </div>
+
         {/* Hero Section */}
-        <section className="text-center max-w-2xl mx-auto mb-16 space-y-6">
+        <section className="text-center max-w-3xl mx-auto mb-16 space-y-6">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="font-display text-5xl md:text-7xl lg:text-8xl text-transparent bg-clip-text bg-gradient-to-br from-white to-white/40"
+            className="font-display text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-white to-white/40"
           >
-            Curated Space
+            The Best Memes Await You
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
@@ -42,7 +74,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-lg text-muted-foreground text-balance"
           >
-            A collection of high-quality, atmospheric wallpapers designed to bring calm and inspiration to your digital environment.
+            Browse our curated collection. Register free to unlock unlimited downloads.
           </motion.p>
         </section>
 
@@ -129,7 +161,30 @@ export default function Home() {
         isOpen={lightboxState.isOpen}
         onClose={closeLightbox}
         onNavigate={navigateLightbox}
+        onDownloadClick={handleDownloadRestricted}
       />
+
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent className="sm:max-w-md bg-black border-white/10 text-white">
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-4">
+              <Lock className="w-6 h-6 text-white/80" />
+            </div>
+            <DialogTitle className="text-center font-display text-2xl">Download Restricted</DialogTitle>
+            <DialogDescription className="text-center text-white/60">
+              Login or create a free account to download this image and unlock unlimited access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-6">
+            <Link href="/register" className="w-full">
+              <Button className="w-full h-12 text-base">Register Free</Button>
+            </Link>
+            <Link href="/login" className="w-full">
+              <Button variant="outline" className="w-full h-12 text-base border-white/10 hover:bg-white/5">Login</Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

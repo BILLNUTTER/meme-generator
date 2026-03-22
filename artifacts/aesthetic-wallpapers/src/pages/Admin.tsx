@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { useAdminLogin, useGetImages, useCreateImage, useDeleteImage, getGetImagesQueryKey } from "@workspace/api-client-react";
+import { useAdminLogin, useGetImages, useCreateImage, useDeleteImage, useGetAdminUsers, getGetImagesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Image as ImageIcon, Loader2 } from "lucide-react";
@@ -25,6 +25,7 @@ export default function Admin() {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [destination, setDestination] = useState("landing");
 
   // API Hooks
   const { mutate: doLogin, isPending: isLoggingIn } = useAdminLogin({
@@ -40,6 +41,11 @@ export default function Admin() {
   });
 
   const { data: images = [], isLoading: isLoadingImages } = useGetImages(undefined, {
+    query: { enabled: isAuthenticated }
+  });
+
+  const { data: users = [], isLoading: isLoadingUsers } = useGetAdminUsers({
+    request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated }
   });
 
@@ -79,7 +85,7 @@ export default function Admin() {
   const handleAddImage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return toast({ variant: "destructive", title: "Required", description: "Image URL is required" });
-    createImage({ data: { url, title: title || null, category } });
+    createImage({ data: { url, title: title || null, category, destination } });
   };
 
   if (!isReady) return null;
@@ -185,6 +191,18 @@ export default function Admin() {
                     {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-neutral-900">{cat}</option>)}
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-xs text-white/50 uppercase tracking-wider">Destination</label>
+                  <select 
+                    value={destination}
+                    onChange={e => setDestination(e.target.value)}
+                    className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-white/20 appearance-none"
+                  >
+                    <option value="landing" className="bg-neutral-900">Landing Page</option>
+                    <option value="dashboard" className="bg-neutral-900">Dashboard</option>
+                    <option value="both" className="bg-neutral-900">Both</option>
+                  </select>
+                </div>
                 <Button type="submit" className="w-full mt-2" disabled={isCreating}>
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Upload Image"}
                 </Button>
@@ -192,50 +210,93 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Image List */}
-          <div className="lg:col-span-2 space-y-4">
-            {isLoadingImages ? (
-              <div className="h-40 flex items-center justify-center glass-card rounded-2xl">
-                <Loader2 className="w-6 h-6 animate-spin text-white/50" />
-              </div>
-            ) : images.length === 0 ? (
-              <div className="h-40 flex flex-col items-center justify-center glass-card rounded-2xl text-white/40">
-                <ImageIcon className="w-8 h-8 mb-3 opacity-50" />
-                <p>No images in the gallery yet.</p>
-              </div>
-            ) : (
-              images.map((img) => (
-                <motion.div 
-                  layout
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  key={img.id}
-                  className="glass-card rounded-xl p-4 flex items-center gap-6 group hover:bg-white/[0.07] transition-colors"
-                >
-                  <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-white/5">
-                    <img src={img.url} alt={img.title || ""} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display text-lg text-white truncate">{img.title || "Untitled"}</h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs uppercase tracking-widest text-white/50 bg-white/5 px-2 py-1 rounded">
-                        {img.category}
-                      </span>
-                      <span className="text-xs text-white/30">ID: {img.id}</span>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="shrink-0 text-white/30 hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => deleteImage({ id: img.id })}
-                    disabled={isDeleting}
+          {/* Image List and Users */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Images */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-display mb-4 flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-white/60" /> Gallery Images ({images.length})
+              </h2>
+              {isLoadingImages ? (
+                <div className="h-40 flex items-center justify-center glass-card rounded-2xl">
+                  <Loader2 className="w-6 h-6 animate-spin text-white/50" />
+                </div>
+              ) : images.length === 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center glass-card rounded-2xl text-white/40">
+                  <ImageIcon className="w-8 h-8 mb-3 opacity-50" />
+                  <p>No images in the gallery yet.</p>
+                </div>
+              ) : (
+                images.map((img) => (
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    key={img.id}
+                    className="glass-card rounded-xl p-4 flex items-center gap-6 group hover:bg-white/[0.07] transition-colors"
                   >
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
-                </motion.div>
-              ))
-            )}
+                    <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-white/5">
+                      <img src={img.url} alt={img.title || ""} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-display text-lg text-white truncate">{img.title || "Untitled"}</h3>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs uppercase tracking-widest text-white/50 bg-white/5 px-2 py-1 rounded">
+                          {img.category}
+                        </span>
+                        <span className="text-xs text-white/30">ID: {img.id}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="shrink-0 text-white/30 hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteImage({ id: img.id })}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
+                  </motion.div>
+                ))
+              )}
+            </div>
+
+            {/* Users List */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-display mb-4 mt-8 flex items-center gap-2">
+                Registered Users ({users.length})
+              </h2>
+              {isLoadingUsers ? (
+                <div className="h-40 flex items-center justify-center glass-card rounded-2xl">
+                  <Loader2 className="w-6 h-6 animate-spin text-white/50" />
+                </div>
+              ) : users.length === 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center glass-card rounded-2xl text-white/40">
+                  <p>No registered users yet.</p>
+                </div>
+              ) : (
+                <div className="glass-card rounded-xl overflow-hidden">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-white/5 border-b border-white/10 text-white/60 uppercase tracking-wider text-xs">
+                      <tr>
+                        <th className="px-6 py-4 font-medium">Name</th>
+                        <th className="px-6 py-4 font-medium">Email</th>
+                        <th className="px-6 py-4 font-medium">Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {users.map(user => (
+                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">{user.name}</td>
+                          <td className="px-6 py-4 text-white/70">{user.email}</td>
+                          <td className="px-6 py-4 text-white/50">{new Date(user.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

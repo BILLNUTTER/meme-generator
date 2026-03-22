@@ -1,8 +1,47 @@
 import { Link, useLocation } from "wouter";
-import { Camera } from "lucide-react";
+import { Camera, LogOut, LayoutDashboard } from "lucide-react";
+import { useState, useEffect } from "react";
+
+interface UserInfo {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export function Header() {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const isDashboard = location.startsWith("/dashboard");
+  const [user, setUser] = useState<UserInfo | null>(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("userInfo");
+    if (raw) {
+      try {
+        setUser(JSON.parse(raw));
+      } catch {
+        setUser(null);
+      }
+    }
+
+    const onStorage = () => {
+      const r = localStorage.getItem("userInfo");
+      setUser(r ? JSON.parse(r) : null);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("auth-change", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("auth-change", onStorage);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userInfo");
+    setUser(null);
+    window.dispatchEvent(new Event("auth-change"));
+    navigate("/");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 glass border-b-0">
@@ -16,13 +55,47 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-6">
-          <Link
-            href="/"
-            className="text-sm font-medium transition-colors duration-200 text-muted-foreground hover:text-white"
-          >
-            Gallery
-          </Link>
+        <nav className="flex items-center gap-4">
+          {user ? (
+            <>
+              <span className="text-sm text-white/60 hidden sm:block">
+                Hi, <span className="text-white/90 font-medium">{user.name.split(" ")[0]}</span>
+              </span>
+              {!isDashboard && (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors duration-200"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">My Gallery</span>
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors duration-200 bg-white/5 px-3 py-2 rounded-full hover:bg-white/10"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </>
+          ) : (
+            !isDashboard && (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium transition-colors duration-200 text-muted-foreground hover:text-white"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="text-sm font-medium transition-colors duration-200 text-white bg-white/10 px-4 py-2 rounded-full hover:bg-white/20"
+                >
+                  Register Free
+                </Link>
+              </>
+            )
+          )}
         </nav>
       </div>
       <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />

@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface LoginBody {
-  username: string;
-  password: string;
-}
+export type GetDashboardImagesParams = {
+  category?: string;
+};
