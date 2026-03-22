@@ -61,18 +61,18 @@ export function MemesPage() {
             No memes yet — check back soon!
           </div>
         ) : (
-          <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
             {memes.map((img) => (
               <motion.div
                 key={img.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="break-inside-avoid rounded-xl overflow-hidden group relative cursor-pointer bg-white/5"
+                className="rounded-xl overflow-hidden group relative cursor-pointer bg-white/5 aspect-square"
               >
                 <img
                   src={img.url}
                   alt={img.title ?? "Meme"}
-                  className="w-full object-cover"
+                  className="w-full h-full object-cover"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
