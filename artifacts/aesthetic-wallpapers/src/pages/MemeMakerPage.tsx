@@ -108,7 +108,7 @@ export function MemeMakerPage() {
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-white/20">{text.length} chars</span>
                 <span className="text-xs text-white/20">
-                  {text.length > 140 ? "Very long — font auto-shrinks to fit 2 lines" : text.length > 80 ? "Long — may use 2 lines" : text.length > 40 ? "Medium — fits neatly" : text.length > 0 ? "Short — big bold text" : ""}
+                  {text.length > 140 ? "Very long — font auto-shrinks" : text.length > 80 ? "Long — wraps naturally" : text.length > 40 ? "Medium — fits neatly" : text.length > 0 ? "Short — big bold text" : ""}
                 </span>
               </div>
             </div>
@@ -135,7 +135,6 @@ export function MemeMakerPage() {
             <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-2">
               <p className="text-xs font-semibold text-white/50">Tips for great memes</p>
               <ul className="text-xs text-white/30 space-y-1">
-                <li>• Text is always capped at 2 lines maximum</li>
                 <li>• Short text = BIG bold letters (most impactful)</li>
                 <li>• Classic black background with white Impact font</li>
                 <li>• Download is free, always — no limits</li>

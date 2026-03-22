@@ -32,12 +32,20 @@ export function generateMemeImage(text: string): string {
   ctx.restore();
 
   const leftMargin = 40;
-  const maxWidth = size - leftMargin - 40; // usable width
+  const maxWidth = size - leftMargin - 40;
 
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  // Word-wrap helper — returns lines at a given font size
+  // Font size based on text length — big for short, smaller for long
+  let fontSize =
+    text.length > 200 ? 44 :
+    text.length > 140 ? 56 :
+    text.length > 80  ? 70 :
+    text.length > 40  ? 88 :
+    text.length > 20  ? 108 : 130;
+
+  // Word-wrap helper
   function wrapText(fs: number): string[] {
     ctx.font = `${fs}px Impact, "Arial Black", sans-serif`;
     const words = text.split(" ");
@@ -56,43 +64,22 @@ export function generateMemeImage(text: string): string {
     return result;
   }
 
-  // Start with a large font and shrink until text fits in at most 2 lines
-  const MAX_LINES = 2;
-  const MIN_FONT = 40;
-  let fontSize = 160; // start large — will shrink as needed
-
-  let lines = wrapText(fontSize);
-
-  // Shrink font until we get ≤ 2 lines
-  while (lines.length > MAX_LINES && fontSize > MIN_FONT) {
-    fontSize -= 4;
-    lines = wrapText(fontSize);
-  }
-
-  // Hard cap: if still more than 2 lines at minimum font, keep first 2 lines
-  if (lines.length > MAX_LINES) {
-    lines = lines.slice(0, MAX_LINES);
-  }
-
-  // If text fits on 1 line and is shorter than 2/3 of canvas, scale up the font
-  if (lines.length === 1) {
-    ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
-    const lineWidth = ctx.measureText(lines[0]).width;
-    const targetWidth = maxWidth * (2 / 3);
-    if (lineWidth < targetWidth) {
-      const scaled = Math.floor(fontSize * (targetWidth / lineWidth));
-      const cappedFont = Math.min(scaled, 220);
-      // Make sure scaling doesn't accidentally push to 2 lines
-      const scaledLines = wrapText(cappedFont);
-      if (scaledLines.length <= MAX_LINES) {
-        fontSize = cappedFont;
-        lines = scaledLines;
-      }
+  // If text fits on a single line and is shorter than 2/3 of canvas, scale up
+  ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
+  const singleLineWidth = ctx.measureText(text).width;
+  if (singleLineWidth <= maxWidth && singleLineWidth < maxWidth * (2 / 3)) {
+    const scaled = Math.floor(fontSize * ((maxWidth * (2 / 3)) / singleLineWidth));
+    const cappedFont = Math.min(scaled, 220);
+    // Only apply if it still fits on one line
+    ctx.font = `${cappedFont}px Impact, "Arial Black", sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) {
+      fontSize = cappedFont;
     }
   }
 
+  const lines = wrapText(fontSize);
+
   // Draw text
-  ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
   const lineH = fontSize * 1.22;
   const totalH = lines.length * lineH;
   const startY = (size - totalH) / 2 + lineH / 2;
