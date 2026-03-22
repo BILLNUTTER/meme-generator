@@ -807,8 +807,8 @@ export default function Admin() {
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
                     <div>
-                      <p className="text-sm text-white font-medium">Sandbox mode</p>
-                      <p className="text-xs text-white/35">Use cybqa.pesapal.com for testing</p>
+                      <p className="text-sm text-white font-medium">Sandbox mode <span className="text-orange-400 text-xs font-normal">(recommended ON)</span></p>
+                      <p className="text-xs text-white/35">Keep ON — live endpoint has geo-restrictions</p>
                     </div>
                     <button onClick={() => setPpSandbox(v => !v)}
                       className={cn("relative w-11 h-6 rounded-full transition-colors duration-300 flex items-center", ppSandbox ? "bg-orange-500" : "bg-white/20")}>
@@ -830,7 +830,7 @@ export default function Admin() {
                   {ppLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : "Save Pesapal Credentials"}
                 </Button>
                 <p className="text-xs text-white/25 leading-relaxed">
-                  Log in to your Pesapal merchant account → Settings → API Keys. Copy and paste the Consumer Key and Consumer Secret above. Disable sandbox when ready for live payments.
+                  Log in to your Pesapal merchant account → Settings → API Keys. Copy and paste the Consumer Key and Consumer Secret above. Keep Sandbox ON — your sandbox credentials work for real M-Pesa STK prompts on cybqa.pesapal.com.
                 </p>
               </div>
             </div>

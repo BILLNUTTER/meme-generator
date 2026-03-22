@@ -45,9 +45,10 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
     return;
   }
 
-  const hostname = isSandbox
-    ? "cybqa.pesapal.com"
-    : "pay.pesapal.com";
+  // Default to sandbox when not explicitly set to false; live endpoint (pay.pesapal.com) may
+  // have geo-restrictions — sandbox (cybqa.pesapal.com) is always reachable.
+  const useSandbox = isSandbox !== false;
+  const hostname = useSandbox ? "cybqa.pesapal.com" : "pay.pesapal.com";
   const base = "/pesapalv3/api";
 
   const { amount, currency = "KES", email, phone, description, merchantRef } = req.body as {
