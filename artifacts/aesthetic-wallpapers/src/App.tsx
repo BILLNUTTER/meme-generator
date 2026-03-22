@@ -11,6 +11,7 @@ import Register from "@/pages/Register";
 import { Dashboard } from "@/pages/Dashboard";
 import TikTokView from "@/pages/TikTokView";
 import PesapalPayment from "@/pages/PesapalPayment";
+import PaySuccess from "@/pages/PaySuccess";
 import NotFound from "@/pages/not-found";
 import { WallpapersPage } from "@/pages/WallpapersPage";
 import { MemesPage } from "@/pages/MemesPage";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/meme-maker" component={MemeMakerPage} />
       <Route path="/tiktok" component={TikTokView} />
       <Route path="/pay" component={PesapalPayment} />
+      <Route path="/pay/success" component={PaySuccess} />
       <Route component={NotFound} />
     </Switch>
   );

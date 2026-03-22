@@ -2,16 +2,19 @@ import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
 import { UserModel } from "../lib/mongodb";
 import { RegisterUserBody, LoginUserBody } from "@workspace/api-zod";
-import { generateUserToken } from "../middlewares/auth";
+import { generateUserToken, requireUserAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
 function toUserJson(doc: InstanceType<typeof UserModel>) {
+  const expiry = doc.tiktokExpiry as unknown as Date | null;
   return {
     id: (doc._id as unknown as { toString(): string }).toString(),
     name: (doc.name as unknown as string),
     email: (doc.email as unknown as string),
     createdAt: (doc.createdAt as unknown as Date).toISOString(),
+    tiktokExpiry: expiry ? expiry.toISOString() : null,
+    tiktokActive: expiry ? expiry > new Date() : false,
   };
 }
 
@@ -73,6 +76,15 @@ router.post("/users/login", async (req, res): Promise<void> => {
     (user.name as unknown as string),
   );
   res.json({ token, user: toUserJson(user) });
+});
+
+// Get current user profile (includes tiktokActive / tiktokExpiry)
+router.get("/users/me", requireUserAuth, async (req, res): Promise<void> => {
+  const userId = (req as { user?: { id?: string } }).user?.id;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const user = await UserModel.findById(userId);
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  res.json(toUserJson(user));
 });
 
 export default router;
