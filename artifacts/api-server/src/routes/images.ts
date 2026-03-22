@@ -136,13 +136,30 @@ function fetchUrl(url: string, options: { method?: string; headers?: Record<stri
 }
 
 async function resolvePinterestUrl(pinUrl: string): Promise<string> {
-  const html = await fetchUrl(pinUrl);
-  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-  if (ogMatch && ogMatch[1]) {
-    return ogMatch[1].replace(/&amp;/g, "&");
+  // Try Pinterest's public oembed API first (no auth needed, reliable)
+  try {
+    const oembedUrl = `https://www.pinterest.com/oembed/?url=${encodeURIComponent(pinUrl)}&format=json`;
+    const json = await fetchUrl(oembedUrl);
+    const data = JSON.parse(json) as { thumbnail_url?: string; title?: string };
+    if (data.thumbnail_url) {
+      // Pinterest oembed gives a small thumbnail – bump it to the largest size
+      const large = data.thumbnail_url
+        .replace(/\/\d+x\//, "/originals/")
+        .replace(/_b\.jpg/, "_o.jpg");
+      return large;
+    }
+  } catch {
+    // fall through to HTML scrape
   }
-  throw new Error("Could not extract image from Pinterest URL. Try the direct image URL instead.");
+
+  // Fallback: fetch the page and extract og:image
+  const html = await fetchUrl(pinUrl);
+  const ogMatch =
+    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  if (ogMatch?.[1]) return ogMatch[1].replace(/&amp;/g, "&");
+
+  throw new Error("Could not extract image from Pinterest URL. Try pasting the direct image URL instead.");
 }
 
 async function getTiktokInfo(tiktokUrl: string): Promise<{ downloadUrl: string; thumbnail: string; title: string }> {

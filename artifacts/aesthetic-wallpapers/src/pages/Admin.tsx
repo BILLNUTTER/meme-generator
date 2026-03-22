@@ -169,8 +169,62 @@ export default function Admin() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (contentType === "tiktok") {
+      if (!tiktokUrl) {
+        toast({ variant: "destructive", title: "Required", description: "Paste a TikTok URL first." });
+        return;
+      }
+      // Auto-resolve if not yet done
+      if (!url) {
+        setIsResolvingTiktok(true);
+        try {
+          const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+          const resp = await fetch(`${baseUrl}/api/images/tiktok-info`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: tiktokUrl }),
+          });
+          const data = await resp.json() as { thumbnail?: string; title?: string; error?: string };
+          if (data.thumbnail) {
+            setTiktokThumbnail(data.thumbnail);
+            setTiktokTitle(data.title || "TikTok Video");
+            createImage({
+              data: {
+                url: data.thumbnail,
+                title: data.title || "TikTok Video",
+                category: "TikTok",
+                destination,
+                type: "tiktok",
+                tiktokUrl,
+              },
+            });
+          } else {
+            toast({ variant: "destructive", title: "Failed", description: data.error || "Could not fetch TikTok info." });
+          }
+        } catch {
+          toast({ variant: "destructive", title: "Error", description: "Network error resolving TikTok." });
+        } finally {
+          setIsResolvingTiktok(false);
+        }
+        return;
+      }
+      // Already resolved
+      createImage({
+        data: {
+          url,
+          title: tiktokTitle || null,
+          category: "TikTok",
+          destination,
+          type: "tiktok",
+          tiktokUrl,
+        },
+      });
+      return;
+    }
+
     if (!url) {
       toast({ variant: "destructive", title: "Required", description: "Image URL is required" });
       return;
@@ -179,10 +233,10 @@ export default function Admin() {
       data: {
         url,
         title: title || null,
-        category: contentType === "tiktok" ? "TikTok" : category,
+        category,
         destination,
         type: contentType,
-        tiktokUrl: contentType === "tiktok" ? tiktokUrl || null : null,
+        tiktokUrl: null,
       },
     });
   };
@@ -429,7 +483,7 @@ export default function Admin() {
                 <Button
                   type="submit"
                   className="w-full mt-2"
-                  disabled={isCreating || (contentType === "tiktok" ? !tiktokUrl : !url)}
+                  disabled={isCreating || isResolvingTiktok || (contentType === "tiktok" ? !tiktokUrl : !url)}
                 >
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : `Add ${contentType === "tiktok" ? "TikTok" : contentType === "meme" ? "Meme" : "Wallpaper"}`}
                 </Button>
