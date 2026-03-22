@@ -23,7 +23,7 @@ export function MemesPage() {
     query: { enabled: isAuthenticated && !!token, staleTime: 5 * 60 * 1000 },
   });
 
-  const memes = (data?.data ?? []).filter((img) => img.type === "meme");
+  const memes = (data ?? []).filter((img) => img.type === "meme");
 
   if (!isReady || !isAuthenticated) return null;
 

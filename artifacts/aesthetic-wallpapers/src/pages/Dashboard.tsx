@@ -66,7 +66,7 @@ export function Dashboard() {
     },
   });
 
-  const allImages = data?.data ?? [];
+  const allImages = data ?? [];
   // Latest 4 picks — API returns newest first
   const picks = allImages.slice(0, 4);
 

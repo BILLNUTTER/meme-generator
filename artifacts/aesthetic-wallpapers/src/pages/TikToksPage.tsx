@@ -21,7 +21,7 @@ export function TikToksPage() {
     query: { enabled: isAuthenticated && !!token, staleTime: 5 * 60 * 1000 },
   });
 
-  const tiktoks = (data?.data ?? []).filter((img) => img.type === "tiktok");
+  const tiktoks = (data ?? []).filter((img) => img.type === "tiktok");
 
   if (!isReady || !isAuthenticated) return null;
 

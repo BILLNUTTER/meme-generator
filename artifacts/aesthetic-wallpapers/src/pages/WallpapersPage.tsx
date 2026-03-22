@@ -33,7 +33,7 @@ export function WallpapersPage() {
   });
 
   const allImages = useMemo(
-    () => (data?.data ?? []).filter((img) => img.type !== "meme" && img.type !== "tiktok"),
+    () => (data ?? []).filter((img) => img.type !== "meme" && img.type !== "tiktok"),
     [data]
   );
 
