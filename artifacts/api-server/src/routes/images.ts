@@ -51,8 +51,8 @@ router.get("/images/dashboard", requireUserAuth, async (req, res): Promise<void>
   if (req.query.type) {
     filter.type = req.query.type;
   }
-  const images = await ImageModel.find(filter).sort({ createdAt: -1 });
-  res.json(images.map(toImageJson));
+  const images = await ImageModel.find(filter).sort({ createdAt: -1 }).limit(120).lean();
+  res.json((images as InstanceType<typeof ImageModel>[]).map(toImageJson));
 });
 
 // Resolve a Pinterest URL to a direct image URL

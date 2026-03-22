@@ -719,6 +719,7 @@ export default function Admin() {
                 <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No members yet.</div>
               ) : (
                 <div className="glass-card rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-white/10">
@@ -764,6 +765,7 @@ export default function Admin() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
             </div>

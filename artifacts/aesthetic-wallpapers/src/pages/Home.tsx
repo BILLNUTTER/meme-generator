@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetImages } from "@workspace/api-client-react";
@@ -31,7 +31,14 @@ export default function Home() {
     activeCategory === "All" ? undefined : { category: activeCategory }
   );
 
-  const samples = images.slice(0, 2);
+  const samples = useMemo(() => {
+    if (activeCategory === "All") {
+      const car = images.find(img => img.category === "Cars");
+      const anime = images.find(img => img.category === "Anime");
+      return [car, anime].filter(Boolean) as typeof images;
+    }
+    return images.slice(0, 2);
+  }, [images, activeCategory]);
 
   return (
     <div className="min-h-screen flex flex-col pt-20 overflow-x-hidden">
