@@ -20,7 +20,7 @@ export function TikToksPage() {
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
   const token = localStorage.getItem("userToken");
 
-  const { data } = useGetDashboardImages(undefined, {
+  const { data, isLoading } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated && !!token, staleTime: 5 * 60 * 1000 },
   });
@@ -61,7 +61,13 @@ export function TikToksPage() {
           <p className="text-white/40 ml-[52px]">{tiktoks.length} videos · tap to play watermark-free</p>
         </div>
 
-        {tiktoks.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="rounded-2xl bg-white/5 animate-pulse aspect-[9/16]" />
+            ))}
+          </div>
+        ) : tiktoks.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-white/30 text-sm glass-card rounded-2xl">
             No TikToks yet — the admin is adding them daily!
           </div>

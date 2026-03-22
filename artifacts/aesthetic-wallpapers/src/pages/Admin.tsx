@@ -111,7 +111,7 @@ export default function Admin() {
     },
   });
 
-  const { data: allImages = [] } = useGetDashboardImages(undefined, {
+  const { data: allImages = [], isLoading: imagesLoading } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated && !!token },
   });
@@ -630,6 +630,9 @@ export default function Admin() {
               <p className="text-white/30 text-sm mb-6">Toggle visibility to show/hide images on the public landing page.</p>
               {(() => {
                 const landingAll = allImages.filter(i => i.type !== "tiktok" && i.type !== "meme");
+                if (imagesLoading) {
+                  return <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="glass-card rounded-xl p-4 h-24 animate-pulse bg-white/5" />)}</div>;
+                }
                 if (landingAll.length === 0) {
                   return <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No wallpapers yet.</div>;
                 }
@@ -690,7 +693,9 @@ export default function Admin() {
           {activeSection === "dashboard" && (
             <div>
               <h2 className="font-display text-2xl text-white mb-6">Dashboard Images</h2>
-              <ImageList images={dashboardImages} label="Dashboard" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />
+              {imagesLoading
+                ? <div className="space-y-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="glass-card rounded-xl p-4 h-20 animate-pulse bg-white/5" />)}</div>
+                : <ImageList images={dashboardImages} label="Dashboard" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />}
             </div>
           )}
 
@@ -698,7 +703,9 @@ export default function Admin() {
           {activeSection === "memes" && (
             <div>
               <h2 className="font-display text-2xl text-white mb-6">Meme Gallery</h2>
-              <ImageList images={memeImages} label="Memes" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} badge="😂" />
+              {imagesLoading
+                ? <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="glass-card rounded-xl p-4 h-20 animate-pulse bg-white/5" />)}</div>
+                : <ImageList images={memeImages} label="Memes" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} badge="😂" />}
             </div>
           )}
 
@@ -706,7 +713,9 @@ export default function Admin() {
           {activeSection === "tiktoks" && (
             <div>
               <h2 className="font-display text-2xl text-white mb-6">TikTok Gallery</h2>
-              <TikTokList images={tiktokImages} onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />
+              {imagesLoading
+                ? <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="rounded-xl bg-white/5 animate-pulse aspect-[9/16]" />)}</div>
+                : <TikTokList images={tiktokImages} onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />}
             </div>
           )}
 

@@ -14,6 +14,19 @@ const JWT_SECRET = process.env.JWT_SECRET ?? "aesthetic-wallpapers-secret-key-20
 
 const router: IRouter = Router();
 
+const TWO_MINUTES = 2 * 60 * 1000;
+interface CacheEntry<T> { data: T; expires: number }
+const cache = new Map<string, CacheEntry<unknown>>();
+function getCache<T>(key: string): T | null {
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
+  if (!entry || Date.now() > entry.expires) { cache.delete(key); return null; }
+  return entry.data;
+}
+function setCache<T>(key: string, data: T, ttl = TWO_MINUTES) {
+  cache.set(key, { data, expires: Date.now() + ttl });
+}
+export function invalidateImagesCache() { cache.clear(); }
+
 function toImageJson(doc: InstanceType<typeof ImageModel>) {
   return {
     id: (doc._id as unknown as { toString(): string }).toString(),
@@ -29,30 +42,36 @@ function toImageJson(doc: InstanceType<typeof ImageModel>) {
 
 router.get("/images", async (req, res): Promise<void> => {
   const query = GetImagesQueryParams.safeParse(req.query);
+  const category = (query.success && query.data.category) ? query.data.category : null;
+  const type = req.query.type as string | undefined;
+  const cacheKey = `landing:${category ?? "all"}:${type ?? "all"}`;
+  const cached = getCache<ReturnType<typeof toImageJson>[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
   const filter: Record<string, unknown> = {
     $or: [{ destination: { $in: ["landing", "both"] } }, { destination: { $exists: false } }],
   };
-  if (query.success && query.data.category) {
-    filter.category = query.data.category;
-  }
-  if (req.query.type) {
-    filter.type = req.query.type;
-  }
-  const images = await ImageModel.find(filter).sort({ createdAt: -1 });
-  res.json(images.map(toImageJson));
+  if (category) filter.category = category;
+  if (type) filter.type = type;
+  const images = await ImageModel.find(filter).sort({ createdAt: -1 }).limit(120).lean();
+  const result = (images as InstanceType<typeof ImageModel>[]).map(toImageJson);
+  setCache(cacheKey, result);
+  res.json(result);
 });
 
 router.get("/images/dashboard", requireUserAuth, async (req, res): Promise<void> => {
   const query = GetImagesQueryParams.safeParse(req.query);
+  const category = (query.success && query.data.category) ? query.data.category : null;
+  const type = req.query.type as string | undefined;
+  const cacheKey = `dashboard:${category ?? "all"}:${type ?? "all"}`;
+  const cached = getCache<ReturnType<typeof toImageJson>[]>(cacheKey);
+  if (cached) { res.json(cached); return; }
   const filter: Record<string, unknown> = {};
-  if (query.success && query.data.category) {
-    filter.category = query.data.category;
-  }
-  if (req.query.type) {
-    filter.type = req.query.type;
-  }
+  if (category) filter.category = category;
+  if (type) filter.type = type;
   const images = await ImageModel.find(filter).sort({ createdAt: -1 }).limit(120).lean();
-  res.json((images as InstanceType<typeof ImageModel>[]).map(toImageJson));
+  const result = (images as InstanceType<typeof ImageModel>[]).map(toImageJson);
+  setCache(cacheKey, result);
+  res.json(result);
 });
 
 // Resolve a Pinterest URL to a direct image URL
@@ -150,6 +169,7 @@ router.post("/images", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const image = await ImageModel.create(parsed.data);
+  invalidateImagesCache();
   res.status(201).json(toImageJson(image));
 });
 
@@ -164,6 +184,7 @@ router.delete("/images/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Image not found" });
     return;
   }
+  invalidateImagesCache();
   res.sendStatus(204);
 });
 

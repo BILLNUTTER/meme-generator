@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { UserModel, PaymentModel, ImageModel } from "../lib/mongodb";
 import { requireAuth } from "../middlewares/auth";
+import { invalidateImagesCache } from "./images";
 
 const router: IRouter = Router();
 
@@ -65,6 +66,7 @@ router.patch("/admin/images/:id/destination", requireAuth, async (req, res): Pro
   }
   const img = await ImageModel.findByIdAndUpdate(id, { destination }, { new: true });
   if (!img) { res.status(404).json({ error: "Image not found" }); return; }
+  invalidateImagesCache();
   res.json({
     id: (img._id as unknown as { toString(): string }).toString(),
     destination: img.destination as string,

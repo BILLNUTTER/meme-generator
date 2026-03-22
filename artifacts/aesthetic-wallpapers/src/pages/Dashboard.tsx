@@ -63,7 +63,7 @@ export function Dashboard() {
 
   const token = localStorage.getItem("userToken");
 
-  const { data } = useGetDashboardImages(undefined, {
+  const { data, isLoading: picksLoading } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: {
       enabled: isAuthenticated && !!token,
@@ -227,7 +227,13 @@ export function Dashboard() {
             <h2 className="font-display text-2xl text-white">Today's Picks</h2>
             <button onClick={() => setLocation("/wallpapers")} className="text-xs text-white/40 hover:text-white transition-colors">View all →</button>
           </div>
-          {picks.length > 0 ? (
+          {picksLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-2xl bg-white/5 animate-pulse aspect-square" />
+              ))}
+            </div>
+          ) : picks.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {picks.map((img, i) => {
                 const typeLabel = img.type === "meme" ? "Meme" : img.type === "tiktok" ? "TikTok" : "Wallpaper";

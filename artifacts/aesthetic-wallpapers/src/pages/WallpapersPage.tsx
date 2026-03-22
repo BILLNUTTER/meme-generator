@@ -22,7 +22,7 @@ export function WallpapersPage() {
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
   const token = localStorage.getItem("userToken");
 
-  const { data } = useGetDashboardImages(undefined, {
+  const { data, isLoading } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: {
       enabled: isAuthenticated && !!token,
@@ -108,7 +108,13 @@ export function WallpapersPage() {
         </p>
 
         <AnimatePresence mode="popLayout">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 space-y-3">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className={`break-inside-avoid rounded-xl bg-white/5 animate-pulse ${i % 3 === 0 ? "aspect-[3/4]" : i % 3 === 1 ? "aspect-square" : "aspect-[4/3]"}`} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
