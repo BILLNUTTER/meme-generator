@@ -8,7 +8,7 @@ import { useUserAuth } from "@/hooks/use-user-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 10;
 
 function getQuota(): { count: number; month: string } {
   const key = "tiktok-dl-quota";
