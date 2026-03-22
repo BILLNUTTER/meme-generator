@@ -6,13 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateImageBody {
-  url: string;
+export interface ResolvedPinterest {
+  imageUrl: string;
   /** @nullable */
   title?: string | null;
-  category: string;
-  destination: string;
-  type: string;
-  /** @nullable */
-  tiktokUrl?: string | null;
 }

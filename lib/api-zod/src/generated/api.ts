@@ -19,6 +19,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const GetImagesQueryParams = zod.object({
   category: zod.coerce.string().optional(),
+  type: zod.coerce.string().optional(),
 });
 
 export const GetImagesResponseItem = zod.object({
@@ -27,6 +28,8 @@ export const GetImagesResponseItem = zod.object({
   title: zod.string().nullish(),
   category: zod.string(),
   destination: zod.string(),
+  type: zod.string(),
+  tiktokUrl: zod.string().nullish(),
   createdAt: zod.date(),
 });
 export const GetImagesResponse = zod.array(GetImagesResponseItem);
@@ -39,13 +42,16 @@ export const CreateImageBody = zod.object({
   title: zod.string().nullish(),
   category: zod.string(),
   destination: zod.string(),
+  type: zod.string(),
+  tiktokUrl: zod.string().nullish(),
 });
 
 /**
- * @summary List all images for logged-in users
+ * @summary List all images for authenticated users
  */
 export const GetDashboardImagesQueryParams = zod.object({
   category: zod.coerce.string().optional(),
+  type: zod.coerce.string().optional(),
 });
 
 export const GetDashboardImagesResponseItem = zod.object({
@@ -54,11 +60,38 @@ export const GetDashboardImagesResponseItem = zod.object({
   title: zod.string().nullish(),
   category: zod.string(),
   destination: zod.string(),
+  type: zod.string(),
+  tiktokUrl: zod.string().nullish(),
   createdAt: zod.date(),
 });
 export const GetDashboardImagesResponse = zod.array(
   GetDashboardImagesResponseItem,
 );
+
+/**
+ * @summary Resolve a Pinterest URL to a direct image URL
+ */
+export const ResolvePinterestBody = zod.object({
+  url: zod.string(),
+});
+
+export const ResolvePinterestResponse = zod.object({
+  imageUrl: zod.string(),
+  title: zod.string().nullish(),
+});
+
+/**
+ * @summary Get TikTok video info for watermark-free download
+ */
+export const GetTiktokInfoBody = zod.object({
+  url: zod.string(),
+});
+
+export const GetTiktokInfoResponse = zod.object({
+  downloadUrl: zod.string(),
+  thumbnail: zod.string(),
+  title: zod.string(),
+});
 
 /**
  * @summary Delete an image (admin only)
@@ -89,7 +122,7 @@ export const RegisterUserBody = zod.object({
 });
 
 /**
- * @summary User login
+ * @summary Login a user
  */
 export const LoginUserBody = zod.object({
   email: zod.string(),

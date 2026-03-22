@@ -8,4 +8,5 @@
 
 export type GetDashboardImagesParams = {
   category?: string;
+  type?: string;
 };

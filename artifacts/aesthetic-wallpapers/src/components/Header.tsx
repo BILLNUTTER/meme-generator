@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Camera, LogOut, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
+import { LogOut, LayoutDashboard } from "lucide-react";
 
 interface UserInfo {
   id: string;
@@ -16,23 +16,14 @@ export function Header() {
   useEffect(() => {
     const raw = localStorage.getItem("userInfo");
     if (raw) {
-      try {
-        setUser(JSON.parse(raw));
-      } catch {
-        setUser(null);
-      }
+      try { setUser(JSON.parse(raw)); } catch { setUser(null); }
     }
-
-    const onStorage = () => {
+    const onAuthChange = () => {
       const r = localStorage.getItem("userInfo");
       setUser(r ? JSON.parse(r) : null);
     };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("auth-change", onStorage);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("auth-change", onStorage);
-    };
+    window.addEventListener("auth-change", onAuthChange);
+    return () => window.removeEventListener("auth-change", onAuthChange);
   }, []);
 
   const handleLogout = () => {
@@ -48,7 +39,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-300">
-            <Camera className="w-5 h-5 text-white/80" />
+            <span className="font-black text-sm text-white/90 tracking-tight select-none">𝐀𝐖</span>
           </div>
           <span className="font-display text-xl font-medium tracking-widest uppercase text-white/90">
             Aesthetic

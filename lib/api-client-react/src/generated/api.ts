@@ -25,8 +25,12 @@ import type {
   HealthStatus,
   Image,
   LoginResponse,
-  RegisterBody,
-  UserLoginBody,
+  LoginUserBody,
+  RegisterUserBody,
+  ResolvePinterestBody,
+  ResolvedPinterest,
+  TiktokInfo,
+  TiktokInfoBody,
   UserLoginResponse,
   UserRecord,
 } from "./api.schemas";
@@ -296,7 +300,7 @@ export const useCreateImage = <
 };
 
 /**
- * @summary List all images for logged-in users
+ * @summary List all images for authenticated users
  */
 export const getGetDashboardImagesUrl = (params?: GetDashboardImagesParams) => {
   const normalizedParams = new URLSearchParams();
@@ -366,7 +370,7 @@ export type GetDashboardImagesQueryResult = NonNullable<
 export type GetDashboardImagesQueryError = ErrorType<ErrorResponse>;
 
 /**
- * @summary List all images for logged-in users
+ * @summary List all images for authenticated users
  */
 
 export function useGetDashboardImages<
@@ -391,6 +395,178 @@ export function useGetDashboardImages<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Resolve a Pinterest URL to a direct image URL
+ */
+export const getResolvePinterestUrl = () => {
+  return `/api/images/resolve-pinterest`;
+};
+
+export const resolvePinterest = async (
+  resolvePinterestBody: ResolvePinterestBody,
+  options?: RequestInit,
+): Promise<ResolvedPinterest> => {
+  return customFetch<ResolvedPinterest>(getResolvePinterestUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resolvePinterestBody),
+  });
+};
+
+export const getResolvePinterestMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolvePinterest>>,
+    TError,
+    { data: BodyType<ResolvePinterestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolvePinterest>>,
+  TError,
+  { data: BodyType<ResolvePinterestBody> },
+  TContext
+> => {
+  const mutationKey = ["resolvePinterest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolvePinterest>>,
+    { data: BodyType<ResolvePinterestBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return resolvePinterest(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolvePinterestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolvePinterest>>
+>;
+export type ResolvePinterestMutationBody = BodyType<ResolvePinterestBody>;
+export type ResolvePinterestMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Resolve a Pinterest URL to a direct image URL
+ */
+export const useResolvePinterest = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolvePinterest>>,
+    TError,
+    { data: BodyType<ResolvePinterestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resolvePinterest>>,
+  TError,
+  { data: BodyType<ResolvePinterestBody> },
+  TContext
+> => {
+  return useMutation(getResolvePinterestMutationOptions(options));
+};
+
+/**
+ * @summary Get TikTok video info for watermark-free download
+ */
+export const getGetTiktokInfoUrl = () => {
+  return `/api/images/tiktok-info`;
+};
+
+export const getTiktokInfo = async (
+  tiktokInfoBody: TiktokInfoBody,
+  options?: RequestInit,
+): Promise<TiktokInfo> => {
+  return customFetch<TiktokInfo>(getGetTiktokInfoUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(tiktokInfoBody),
+  });
+};
+
+export const getGetTiktokInfoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getTiktokInfo>>,
+    TError,
+    { data: BodyType<TiktokInfoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getTiktokInfo>>,
+  TError,
+  { data: BodyType<TiktokInfoBody> },
+  TContext
+> => {
+  const mutationKey = ["getTiktokInfo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getTiktokInfo>>,
+    { data: BodyType<TiktokInfoBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getTiktokInfo(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetTiktokInfoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getTiktokInfo>>
+>;
+export type GetTiktokInfoMutationBody = BodyType<TiktokInfoBody>;
+export type GetTiktokInfoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get TikTok video info for watermark-free download
+ */
+export const useGetTiktokInfo = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getTiktokInfo>>,
+    TError,
+    { data: BodyType<TiktokInfoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getTiktokInfo>>,
+  TError,
+  { data: BodyType<TiktokInfoBody> },
+  TContext
+> => {
+  return useMutation(getGetTiktokInfoMutationOptions(options));
+};
 
 /**
  * @summary Delete an image (admin only)
@@ -570,14 +746,14 @@ export const getRegisterUserUrl = () => {
 };
 
 export const registerUser = async (
-  registerBody: RegisterBody,
+  registerUserBody: RegisterUserBody,
   options?: RequestInit,
 ): Promise<UserLoginResponse> => {
   return customFetch<UserLoginResponse>(getRegisterUserUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(registerBody),
+    body: JSON.stringify(registerUserBody),
   });
 };
 
@@ -588,14 +764,14 @@ export const getRegisterUserMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof registerUser>>,
     TError,
-    { data: BodyType<RegisterBody> },
+    { data: BodyType<RegisterUserBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof registerUser>>,
   TError,
-  { data: BodyType<RegisterBody> },
+  { data: BodyType<RegisterUserBody> },
   TContext
 > => {
   const mutationKey = ["registerUser"];
@@ -609,7 +785,7 @@ export const getRegisterUserMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof registerUser>>,
-    { data: BodyType<RegisterBody> }
+    { data: BodyType<RegisterUserBody> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -622,7 +798,7 @@ export const getRegisterUserMutationOptions = <
 export type RegisterUserMutationResult = NonNullable<
   Awaited<ReturnType<typeof registerUser>>
 >;
-export type RegisterUserMutationBody = BodyType<RegisterBody>;
+export type RegisterUserMutationBody = BodyType<RegisterUserBody>;
 export type RegisterUserMutationError = ErrorType<ErrorResponse>;
 
 /**
@@ -635,35 +811,35 @@ export const useRegisterUser = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof registerUser>>,
     TError,
-    { data: BodyType<RegisterBody> },
+    { data: BodyType<RegisterUserBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof registerUser>>,
   TError,
-  { data: BodyType<RegisterBody> },
+  { data: BodyType<RegisterUserBody> },
   TContext
 > => {
   return useMutation(getRegisterUserMutationOptions(options));
 };
 
 /**
- * @summary User login
+ * @summary Login a user
  */
 export const getLoginUserUrl = () => {
   return `/api/users/login`;
 };
 
 export const loginUser = async (
-  userLoginBody: UserLoginBody,
+  loginUserBody: LoginUserBody,
   options?: RequestInit,
 ): Promise<UserLoginResponse> => {
   return customFetch<UserLoginResponse>(getLoginUserUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(userLoginBody),
+    body: JSON.stringify(loginUserBody),
   });
 };
 
@@ -674,14 +850,14 @@ export const getLoginUserMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof loginUser>>,
     TError,
-    { data: BodyType<UserLoginBody> },
+    { data: BodyType<LoginUserBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof loginUser>>,
   TError,
-  { data: BodyType<UserLoginBody> },
+  { data: BodyType<LoginUserBody> },
   TContext
 > => {
   const mutationKey = ["loginUser"];
@@ -695,7 +871,7 @@ export const getLoginUserMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof loginUser>>,
-    { data: BodyType<UserLoginBody> }
+    { data: BodyType<LoginUserBody> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -708,11 +884,11 @@ export const getLoginUserMutationOptions = <
 export type LoginUserMutationResult = NonNullable<
   Awaited<ReturnType<typeof loginUser>>
 >;
-export type LoginUserMutationBody = BodyType<UserLoginBody>;
+export type LoginUserMutationBody = BodyType<LoginUserBody>;
 export type LoginUserMutationError = ErrorType<ErrorResponse>;
 
 /**
- * @summary User login
+ * @summary Login a user
  */
 export const useLoginUser = <
   TError = ErrorType<ErrorResponse>,
@@ -721,14 +897,14 @@ export const useLoginUser = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof loginUser>>,
     TError,
-    { data: BodyType<UserLoginBody> },
+    { data: BodyType<LoginUserBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof loginUser>>,
   TError,
-  { data: BodyType<UserLoginBody> },
+  { data: BodyType<LoginUserBody> },
   TContext
 > => {
   return useMutation(getLoginUserMutationOptions(options));

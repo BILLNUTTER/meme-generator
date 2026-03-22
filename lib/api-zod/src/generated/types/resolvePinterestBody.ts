@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type GetImagesParams = {
-  category?: string;
-  type?: string;
-};
+export interface ResolvePinterestBody {
+  url: string;
+}

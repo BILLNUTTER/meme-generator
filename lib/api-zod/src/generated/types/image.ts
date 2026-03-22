@@ -13,5 +13,8 @@ export interface Image {
   title?: string | null;
   category: string;
   destination: string;
+  type: string;
+  /** @nullable */
+  tiktokUrl?: string | null;
   createdAt: Date;
 }

@@ -16,6 +16,9 @@ export interface Image {
   title?: string | null;
   category: string;
   destination: string;
+  type: string;
+  /** @nullable */
+  tiktokUrl?: string | null;
   createdAt: string;
 }
 
@@ -25,6 +28,29 @@ export interface CreateImageBody {
   title?: string | null;
   category: string;
   destination: string;
+  type: string;
+  /** @nullable */
+  tiktokUrl?: string | null;
+}
+
+export interface ResolvePinterestBody {
+  url: string;
+}
+
+export interface ResolvedPinterest {
+  imageUrl: string;
+  /** @nullable */
+  title?: string | null;
+}
+
+export interface TiktokInfoBody {
+  url: string;
+}
+
+export interface TiktokInfo {
+  downloadUrl: string;
+  thumbnail: string;
+  title: string;
 }
 
 export interface AdminLoginBody {
@@ -36,13 +62,13 @@ export interface LoginResponse {
   token: string;
 }
 
-export interface RegisterBody {
+export interface RegisterUserBody {
   name: string;
   email: string;
   password: string;
 }
 
-export interface UserLoginBody {
+export interface LoginUserBody {
   email: string;
   password: string;
 }
@@ -65,8 +91,10 @@ export interface ErrorResponse {
 
 export type GetImagesParams = {
   category?: string;
+  type?: string;
 };
 
 export type GetDashboardImagesParams = {
   category?: string;
+  type?: string;
 };

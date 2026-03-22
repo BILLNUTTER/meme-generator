@@ -19,6 +19,8 @@ const imageSchema = new mongoose.Schema(
     title: { type: String, default: null },
     category: { type: String, required: true, default: "Nature" },
     destination: { type: String, required: true, default: "landing", enum: ["landing", "dashboard", "both"] },
+    type: { type: String, required: true, default: "wallpaper", enum: ["wallpaper", "meme", "tiktok"] },
+    tiktokUrl: { type: String, default: null },
   },
   { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );

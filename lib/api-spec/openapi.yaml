@@ -41,6 +41,11 @@ paths:
           required: false
           schema:
             type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: List of images
@@ -83,16 +88,21 @@ paths:
     get:
       operationId: getDashboardImages
       tags: [images]
-      summary: List all images for logged-in users
+      summary: List all images for authenticated users
       parameters:
         - name: category
           in: query
           required: false
           schema:
             type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
-          description: All images
+          description: List of images
           content:
             application/json:
               schema:
@@ -101,6 +111,54 @@ paths:
                   $ref: "#/components/schemas/Image"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /images/resolve-pinterest:
+    post:
+      operationId: resolvePinterest
+      tags: [images]
+      summary: Resolve a Pinterest URL to a direct image URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolvePinterestBody"
+      responses:
+        "200":
+          description: Resolved image URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolvedPinterest"
+        "400":
+          description: Invalid URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /images/tiktok-info:
+    post:
+      operationId: getTiktokInfo
+      tags: [images]
+      summary: Get TikTok video info for watermark-free download
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TiktokInfoBody"
+      responses:
+        "200":
+          description: TikTok video info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TiktokInfo"
+        "400":
+          description: Invalid URL
           content:
             application/json:
               schema:
@@ -165,7 +223,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterBody"
+              $ref: "#/components/schemas/RegisterUserBody"
       responses:
         "201":
           description: User registered
@@ -174,7 +232,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserLoginResponse"
         "400":
-          description: Invalid input or email taken
+          description: Invalid input or email in use
           content:
             application/json:
               schema:
@@ -183,13 +241,13 @@ paths:
     post:
       operationId: loginUser
       tags: [users]
-      summary: User login
+      summary: Login a user
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UserLoginBody"
+              $ref: "#/components/schemas/LoginUserBody"
       responses:
         "200":
           description: Login successful
@@ -245,6 +303,10 @@ components:
           type: string
         destination:
           type: string
+        type:
+          type: string
+        tiktokUrl:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -253,6 +315,7 @@ components:
         - url
         - category
         - destination
+        - type
         - createdAt
     CreateImageBody:
       type: object
@@ -265,10 +328,51 @@ components:
           type: string
         destination:
           type: string
+        type:
+          type: string
+        tiktokUrl:
+          type: ["string", "null"]
       required:
         - url
         - category
         - destination
+        - type
+    ResolvePinterestBody:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+    ResolvedPinterest:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+        title:
+          type: ["string", "null"]
+      required:
+        - imageUrl
+    TiktokInfoBody:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+    TiktokInfo:
+      type: object
+      properties:
+        downloadUrl:
+          type: string
+        thumbnail:
+          type: string
+        title:
+          type: string
+      required:
+        - downloadUrl
+        - thumbnail
+        - title
     AdminLoginBody:
       type: object
       properties:
@@ -286,7 +390,7 @@ components:
           type: string
       required:
         - token
-    RegisterBody:
+    RegisterUserBody:
       type: object
       properties:
         name:
@@ -299,7 +403,7 @@ components:
         - name
         - email
         - password
-    UserLoginBody:
+    LoginUserBody:
       type: object
       properties:
         email:
