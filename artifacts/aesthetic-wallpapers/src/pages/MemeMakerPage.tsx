@@ -160,15 +160,23 @@ export function MemeMakerPage() {
                   className="w-full h-full object-contain"
                 />
               ) : text.trim() ? (
-                <div className="w-full h-full bg-[#080808] flex items-center justify-center p-6">
+                <div className="w-full h-full bg-[#080808] flex items-center justify-center p-4">
                   <p
-                    className="text-white text-center leading-tight break-words"
+                    className="text-white text-center leading-tight w-full"
                     style={{
-                      fontSize: text.length > 120 ? "11px" : text.length > 70 ? "14px" : text.length > 35 ? "18px" : "24px",
+                      fontSize:
+                        text.length > 120 ? "clamp(9px, 1.8vw, 11px)" :
+                        text.length > 70  ? "clamp(11px, 2.4vw, 14px)" :
+                        text.length > 40  ? "clamp(14px, 3vw, 18px)" :
+                        text.length > 20  ? "clamp(18px, 3.8vw, 26px)" :
+                        text.length > 10  ? "clamp(26px, 5.5vw, 38px)" :
+                                            "clamp(34px, 7vw, 52px)",
                       fontFamily: "Impact, 'Arial Black', sans-serif",
+                      overflowWrap: "break-word",
                       wordBreak: "break-word",
                       WebkitTextStroke: "0.5px #000",
                       textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
+                      minWidth: text.length <= 20 ? "67%" : undefined,
                     }}
                   >
                     {text}
