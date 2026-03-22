@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { UserModel, PaymentModel } from "../lib/mongodb";
+import { UserModel, PaymentModel, ImageModel } from "../lib/mongodb";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -52,6 +52,22 @@ router.get("/admin/revenue", requireAuth, async (req, res): Promise<void> => {
       orderTrackingId: p.orderTrackingId,
       createdAt: (p.createdAt as Date).toISOString(),
     })),
+  });
+});
+
+router.patch("/admin/images/:id/destination", requireAuth, async (req, res): Promise<void> => {
+  const { id } = req.params;
+  const { destination } = req.body as { destination: string };
+  const allowed = ["landing", "dashboard", "both"];
+  if (!allowed.includes(destination)) {
+    res.status(400).json({ error: "destination must be landing, dashboard, or both" });
+    return;
+  }
+  const img = await ImageModel.findByIdAndUpdate(id, { destination }, { new: true });
+  if (!img) { res.status(404).json({ error: "Image not found" }); return; }
+  res.json({
+    id: (img._id as unknown as { toString(): string }).toString(),
+    destination: img.destination as string,
   });
 });
 

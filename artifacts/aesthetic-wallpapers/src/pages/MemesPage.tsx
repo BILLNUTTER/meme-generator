@@ -17,8 +17,10 @@ export function MemesPage() {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
+  const token = localStorage.getItem("userToken");
   const { data } = useGetDashboardImages(undefined, {
-    request: { headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` } },
+    request: { headers: { Authorization: `Bearer ${token}` } },
+    query: { enabled: isAuthenticated && !!token, staleTime: 5 * 60 * 1000 },
   });
 
   const memes = (data?.data ?? []).filter((img) => img.type === "meme");

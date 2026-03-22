@@ -20,7 +20,7 @@ import {
   Trash2, Plus, Image as ImageIcon, Loader2, Music, Laugh,
   RefreshCw, Users, LayoutGrid, Search, Settings, CreditCard,
   CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, BarChart3,
-  ShieldOff, ShieldCheck, DollarSign,
+  ShieldOff, ShieldCheck, DollarSign, Eye, EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateMemeImage } from "@/lib/generate-meme";
@@ -142,6 +142,23 @@ export default function Admin() {
       toast({ title: suspend ? "User suspended" : "User reinstated", description: suspend ? "User cannot log in." : "User can log in again." });
     } catch { toast({ variant: "destructive", title: "Error", description: "Could not update user." }); }
     finally { setSuspendLoading(null); }
+  };
+
+  const [destLoading, setDestLoading] = useState<string | null>(null);
+
+  const handleToggleLanding = async (imageId: string, currentDest: string) => {
+    setDestLoading(imageId);
+    const newDest = (currentDest === "landing" || currentDest === "both") ? "dashboard" : "both";
+    try {
+      await fetch(`${baseUrl}/api/admin/images/${imageId}/destination`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ destination: newDest }),
+      });
+      invalidateAll();
+      toast({ title: newDest === "dashboard" ? "Hidden from landing" : "Visible on landing", description: newDest === "dashboard" ? "Image is now dashboard-only." : "Image is now shown on landing page." });
+    } catch { toast({ variant: "destructive", title: "Error", description: "Could not update visibility." }); }
+    finally { setDestLoading(null); }
   };
 
   const invalidateAll = () => {
@@ -609,8 +626,63 @@ export default function Admin() {
           {/* Landing */}
           {activeSection === "landing" && (
             <div>
-              <h2 className="font-display text-2xl text-white mb-6">Landing Images</h2>
-              <ImageList images={landingImages} label="Landing" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />
+              <h2 className="font-display text-2xl text-white mb-2">Landing Page Images</h2>
+              <p className="text-white/30 text-sm mb-6">Toggle visibility to show/hide images on the public landing page.</p>
+              {(() => {
+                const landingAll = allImages.filter(i => i.type !== "tiktok" && i.type !== "meme");
+                if (landingAll.length === 0) {
+                  return <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No wallpapers yet.</div>;
+                }
+                return (
+                  <div className="space-y-3">
+                    {landingAll.map(img => {
+                      const isOnLanding = img.destination === "landing" || img.destination === "both";
+                      return (
+                        <motion.div key={img.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                          className={cn("glass-card rounded-xl p-4 flex items-center gap-4 group transition-colors", !isOnLanding && "opacity-50")}>
+                          <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-white/5">
+                            <img src={img.url} alt={img.title || ""} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-white text-sm truncate">{img.title || "Untitled"}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-white/40 bg-white/5 px-2 py-0.5 rounded">{img.category}</span>
+                              <span className={cn("text-xs px-2 py-0.5 rounded font-medium", isOnLanding ? "text-green-400 bg-green-500/10" : "text-white/30 bg-white/5")}>
+                                {isOnLanding ? "Visible on landing" : "Hidden (dashboard only)"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => handleToggleLanding(img.id, img.destination ?? "landing")}
+                              disabled={destLoading === img.id}
+                              title={isOnLanding ? "Hide from landing" : "Show on landing"}
+                              className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+                                isOnLanding
+                                  ? "bg-white/5 text-white/50 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 border-white/10"
+                                  : "bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20"
+                              )}
+                            >
+                              {destLoading === img.id
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : isOnLanding
+                                  ? <><EyeOff className="w-3.5 h-3.5" /> Hide</>
+                                  : <><Eye className="w-3.5 h-3.5" /> Show</>
+                              }
+                            </button>
+                            <Button variant="ghost" size="icon"
+                              className="text-white/25 hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteImage({ id: img.id })} disabled={isDeleting}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
 

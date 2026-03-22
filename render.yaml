@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: aesthetics-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: |
+      npm install -g pnpm &&
+      pnpm install &&
+      pnpm --filter @workspace/aesthetic-wallpapers run build &&
+      pnpm --filter @workspace/api-server run build
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: BASE_PATH
+        value: /
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: APP_URL
+        sync: false
+    healthCheckPath: /api/images

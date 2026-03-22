@@ -8,7 +8,7 @@ import {
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useUserAuth } from "@/hooks/use-user-auth";
-import { useGetImages } from "@workspace/api-client-react";
+import { useGetDashboardImages } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,7 @@ export function Dashboard() {
   const { isReady, isAuthenticated, user, logout } = useUserAuth();
   const sliderRef = useRef<HTMLDivElement>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   const [tkUrl, setTkUrl] = useState("");
   const [tkLoading, setTkLoading] = useState(false);
@@ -55,12 +56,19 @@ export function Dashboard() {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
-  const { data } = useGetImages(undefined, {
-    request: { headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` } },
+  const token = localStorage.getItem("userToken");
+
+  const { data } = useGetDashboardImages(undefined, {
+    request: { headers: { Authorization: `Bearer ${token}` } },
+    query: {
+      enabled: isAuthenticated && !!token,
+      staleTime: 5 * 60 * 1000,
+    },
   });
+
   const allImages = data?.data ?? [];
-  const sampleWallpaper = allImages.find(i => i.type !== "meme" && i.type !== "tiktok");
-  const sampleMeme = allImages.find(i => i.type === "meme");
+  // Latest 4 picks — API returns newest first
+  const picks = allImages.slice(0, 4);
 
   const remaining = FREE_LIMIT - quota.count;
   const exhausted = remaining <= 0;
@@ -78,9 +86,9 @@ export function Dashboard() {
     if (!tkUrl.trim() || exhausted) return;
     setTkError(null); setTkResult(null); setTkLoading(true);
     try {
-      const resp = await fetch("/api/images/tiktok-info", {
+      const resp = await fetch(`${baseUrl}/api/images/tiktok-info`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("userToken")}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ url: tkUrl }),
       });
       const d = await resp.json() as { videoUrl?: string; thumbnail?: string; title?: string; error?: string };
@@ -98,8 +106,8 @@ export function Dashboard() {
     if (!tkResult) return;
     setIsDownloading(true); setDlProgress(0);
     try {
-      const resp = await fetch(`/api/proxy?url=${encodeURIComponent(tkResult.videoUrl)}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` },
+      const resp = await fetch(`${baseUrl}/api/proxy?url=${encodeURIComponent(tkResult.videoUrl)}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!resp.ok || !resp.body) throw new Error();
       const len = Number(resp.headers.get("Content-Length") ?? "0");
@@ -125,7 +133,6 @@ export function Dashboard() {
     <div className="min-h-screen flex flex-col pt-20 bg-background">
       <Header />
 
-      {/* Download progress bar */}
       {isDownloading && dlProgress > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl min-w-[220px]">
           <div className="w-32 h-1.5 rounded-full bg-white/10">
@@ -176,7 +183,7 @@ export function Dashboard() {
             </div>
           </div>
           <div ref={sliderRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none" }}>
-            {SERVICES.map((svc, i) => {
+            {SERVICES.map((svc) => {
               const Icon = svc.icon;
               return (
                 <motion.button key={svc.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -197,36 +204,30 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* ── SAMPLE GALLERY ── */}
+        {/* ── TODAY'S PICKS ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-2xl text-white">Today's Picks</h2>
             <button onClick={() => setLocation("/wallpapers")} className="text-xs text-white/40 hover:text-white transition-colors">View all →</button>
           </div>
-          {sampleWallpaper || sampleMeme ? (
-            <div className="grid grid-cols-2 gap-4">
-              {sampleWallpaper && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-[4/3] bg-white/5"
-                  onClick={() => setLocation("/wallpapers")}>
-                  <img src={sampleWallpaper.url} alt={sampleWallpaper.title ?? "Wallpaper"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                    <p className="text-white font-medium text-sm">{sampleWallpaper.title ?? sampleWallpaper.category}</p>
-                  </div>
-                  <div className="absolute top-3 left-3 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm text-xs text-blue-300 font-medium">Wallpaper</div>
-                </motion.div>
-              )}
-              {sampleMeme && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-                  className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-[4/3] bg-white/5"
-                  onClick={() => setLocation("/memes")}>
-                  <img src={sampleMeme.url} alt={sampleMeme.title ?? "Meme"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                    <p className="text-white font-medium text-sm">{sampleMeme.title ?? "Meme"}</p>
-                  </div>
-                  <div className="absolute top-3 left-3 px-2 py-1 rounded-lg bg-black/50 backdrop-blur-sm text-xs text-yellow-300 font-medium">Meme</div>
-                </motion.div>
-              )}
+          {picks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {picks.map((img, i) => {
+                const typeLabel = img.type === "meme" ? "Meme" : img.type === "tiktok" ? "TikTok" : "Wallpaper";
+                const typeBadgeColor = img.type === "meme" ? "text-yellow-300" : img.type === "tiktok" ? "text-pink-300" : "text-blue-300";
+                const href = img.type === "meme" ? "/memes" : img.type === "tiktok" ? "/tiktoks" : "/wallpapers";
+                return (
+                  <motion.div key={img.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                    className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-square bg-white/5"
+                    onClick={() => setLocation(href)}>
+                    <img src={img.url} alt={img.title ?? typeLabel} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                      <p className="text-white font-medium text-xs truncate">{img.title ?? img.category}</p>
+                    </div>
+                    <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-sm text-xs font-medium ${typeBadgeColor}`}>{typeLabel}</div>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className="h-48 flex items-center justify-center text-white/20 text-sm glass-card rounded-2xl">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { ArrowLeft, Download, Expand } from "lucide-react";
@@ -9,8 +9,6 @@ import { useUserAuth } from "@/hooks/use-user-auth";
 import { useGetDashboardImages } from "@workspace/api-client-react";
 import { buildProxyUrl, downloadWithProgress } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-
-const CATEGORIES = ["All", "Nature", "Minimalism", "Cars", "Anime", "Vaporwave", "Architecture", "Space", "Abstract"];
 
 export function WallpapersPage() {
   const [, setLocation] = useLocation();
@@ -24,14 +22,34 @@ export function WallpapersPage() {
   }, [isReady, isAuthenticated, setLocation]);
 
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const token = localStorage.getItem("userToken");
 
   const { data } = useGetDashboardImages(undefined, {
-    request: { headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` } },
+    request: { headers: { Authorization: `Bearer ${token}` } },
+    query: {
+      enabled: isAuthenticated && !!token,
+      staleTime: 5 * 60 * 1000,
+    },
   });
 
-  const allImages = (data?.data ?? []).filter(
-    (img) => img.type !== "meme" && img.type !== "tiktok"
+  const allImages = useMemo(
+    () => (data?.data ?? []).filter((img) => img.type !== "meme" && img.type !== "tiktok"),
+    [data]
   );
+
+  // Build category list dynamically from actual image data
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(allImages.map((i) => i.category).filter(Boolean))) as string[];
+    cats.sort();
+    return ["All", ...cats];
+  }, [allImages]);
+
+  // Reset to "All" if current category disappears
+  useEffect(() => {
+    if (activeCategory !== "All" && !categories.includes(activeCategory)) {
+      setActiveCategory("All");
+    }
+  }, [categories, activeCategory]);
 
   const filtered = activeCategory === "All"
     ? allImages
@@ -68,7 +86,6 @@ export function WallpapersPage() {
       )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back */}
         <button
           onClick={() => setLocation("/dashboard")}
           className="flex items-center gap-2 text-white/40 hover:text-white text-sm mb-8 transition-colors"
@@ -76,15 +93,14 @@ export function WallpapersPage() {
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </button>
 
-        {/* Page header */}
         <div className="mb-8">
           <h1 className="font-display text-4xl sm:text-5xl text-white mb-2">Wallpapers</h1>
           <p className="text-white/40">Premium aesthetic wallpapers curated daily</p>
         </div>
 
-        {/* Category pills */}
+        {/* Dynamic category pills */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -96,16 +112,19 @@ export function WallpapersPage() {
               )}
             >
               {cat}
+              {cat !== "All" && (
+                <span className="ml-1.5 text-xs opacity-50">
+                  {allImages.filter((i) => i.category === cat).length}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
-        {/* Count */}
         <p className="text-white/30 text-xs mb-6">
-          {filtered.length} {filtered.length === 1 ? "wallpaper" : "wallpapers"} in {activeCategory}
+          {filtered.length} {filtered.length === 1 ? "wallpaper" : "wallpapers"}{activeCategory !== "All" ? ` in ${activeCategory}` : ""}
         </p>
 
-        {/* Grid */}
         <AnimatePresence mode="popLayout">
           {filtered.length === 0 ? (
             <motion.div
