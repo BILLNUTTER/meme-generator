@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useAdminLogin,
-  useGetImages,
+  useGetDashboardImages,
   useCreateImage,
   useDeleteImage,
   useGetAdminUsers,
   getGetImagesQueryKey,
+  getGetDashboardImagesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +55,9 @@ export default function Admin() {
   const [pinterestInput, setPinterestInput] = useState("");
   const [isResolvingPinterest, setIsResolvingPinterest] = useState(false);
 
+  // Meme state
+  const [memeText, setMemeText] = useState("");
+
   // TikTok state
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [tiktokThumbnail, setTiktokThumbnail] = useState("");
@@ -75,8 +79,10 @@ export default function Admin() {
     },
   });
 
-  const { data: allImages = [], isLoading: isLoadingImages } = useGetImages(undefined, {
-    query: { enabled: isAuthenticated },
+  // Use dashboard endpoint (no destination filter) so admin sees ALL content incl. dashboard-only TikToks
+  const { data: allImages = [], isLoading: isLoadingImages } = useGetDashboardImages(undefined, {
+    request: { headers: { Authorization: `Bearer ${token}` } },
+    query: { enabled: isAuthenticated && !!token },
   });
 
   const { data: users = [], isLoading: isLoadingUsers } = useGetAdminUsers({
@@ -84,11 +90,16 @@ export default function Admin() {
     query: { enabled: isAuthenticated },
   });
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: getGetImagesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardImagesQueryKey() });
+  };
+
   const { mutate: createImage, isPending: isCreating } = useCreateImage({
     request: { headers: { Authorization: `Bearer ${token}` } },
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetImagesQueryKey() });
+        invalidateAll();
         toast({ title: "Content Added", description: "Successfully added to gallery." });
         resetForm();
       },
@@ -102,7 +113,7 @@ export default function Admin() {
     request: { headers: { Authorization: `Bearer ${token}` } },
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetImagesQueryKey() });
+        invalidateAll();
         toast({ title: "Removed", description: "Successfully deleted." });
       },
       onError: () => {
@@ -113,7 +124,8 @@ export default function Admin() {
 
   const resetForm = () => {
     setUrl(""); setTitle(""); setCategory(CATEGORIES[0]); setDestination("landing");
-    setPinterestInput(""); setTiktokUrl(""); setTiktokThumbnail(""); setTiktokTitle("");
+    setPinterestInput(""); setMemeText("");
+    setTiktokUrl(""); setTiktokThumbnail(""); setTiktokTitle("");
   };
 
   const handleLogin = (e: React.FormEvent) => { e.preventDefault(); doLogin({ data: { username, password } }); };
@@ -171,6 +183,26 @@ export default function Admin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ── Meme: generate canvas image from text ──
+    if (contentType === "meme") {
+      if (!memeText.trim()) {
+        toast({ variant: "destructive", title: "Required", description: "Enter meme text first." });
+        return;
+      }
+      const dataUrl = generateMemeImage(memeText.trim());
+      createImage({
+        data: {
+          url: dataUrl,
+          title: memeText.trim().slice(0, 80) || null,
+          category: "Memes",
+          destination,
+          type: "meme",
+          tiktokUrl: null,
+        },
+      });
+      return;
+    }
 
     if (contentType === "tiktok") {
       if (!tiktokUrl) {
@@ -396,8 +428,36 @@ export default function Admin() {
                   </>
                 )}
 
-                {/* Pinterest resolver for wallpapers/memes */}
-                {contentType !== "tiktok" && (
+                {/* ── Meme: text input → auto-generate black+white image ── */}
+                {contentType === "meme" && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs text-white/50 uppercase tracking-wider">Meme Text</label>
+                      <textarea
+                        value={memeText}
+                        onChange={e => setMemeText(e.target.value)}
+                        placeholder="Type your meme here…"
+                        rows={4}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-white/30 focus:outline-none focus:border-white/20 resize-none"
+                      />
+                      <p className="text-xs text-white/30">Auto-generates a black background + white text image</p>
+                    </div>
+                    {/* Live preview */}
+                    {memeText.trim() && (
+                      <div className="rounded-xl overflow-hidden aspect-square bg-black border border-white/10 flex items-center justify-center p-4">
+                        <p
+                          className="text-white text-center font-black uppercase leading-tight break-words"
+                          style={{ fontSize: memeText.length > 80 ? "14px" : memeText.length > 40 ? "18px" : "24px", fontFamily: "Impact, Arial Black, sans-serif", wordBreak: "break-word" }}
+                        >
+                          {memeText.toUpperCase()}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* ── Wallpaper: Pinterest resolver + direct URL ── */}
+                {contentType === "wallpaper" && (
                   <>
                     <div className="space-y-2">
                       <label className="text-xs text-white/50 uppercase tracking-wider">Pinterest URL</label>
@@ -421,14 +481,9 @@ export default function Admin() {
                       </div>
                       <p className="text-xs text-white/30">Or paste a direct image URL below</p>
                     </div>
-
                     <div className="space-y-2">
                       <label className="text-xs text-white/50 uppercase tracking-wider">Image URL</label>
-                      <Input
-                        value={url}
-                        onChange={e => setUrl(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                      />
+                      <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
                     </div>
                     {url && (
                       <div className="rounded-xl overflow-hidden aspect-video bg-white/5">
@@ -437,20 +492,18 @@ export default function Admin() {
                     )}
                     <div className="space-y-2">
                       <label className="text-xs text-white/50 uppercase tracking-wider">Title (Optional)</label>
-                      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="My favorite wallpaper" />
+                      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="My favourite wallpaper" />
                     </div>
-                    {contentType === "wallpaper" && (
-                      <div className="space-y-2">
-                        <label className="text-xs text-white/50 uppercase tracking-wider">Category</label>
-                        <select
-                          value={category}
-                          onChange={e => setCategory(e.target.value)}
-                          className="w-full h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-foreground focus:outline-none appearance-none"
-                        >
-                          {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-neutral-900">{cat}</option>)}
-                        </select>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <label className="text-xs text-white/50 uppercase tracking-wider">Category</label>
+                      <select
+                        value={category}
+                        onChange={e => setCategory(e.target.value)}
+                        className="w-full h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-foreground focus:outline-none appearance-none"
+                      >
+                        {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-neutral-900">{cat}</option>)}
+                      </select>
+                    </div>
                   </>
                 )}
 
@@ -483,7 +536,10 @@ export default function Admin() {
                 <Button
                   type="submit"
                   className="w-full mt-2"
-                  disabled={isCreating || isResolvingTiktok || (contentType === "tiktok" ? !tiktokUrl : !url)}
+                  disabled={
+                    isCreating || isResolvingTiktok ||
+                    (contentType === "tiktok" ? !tiktokUrl : contentType === "meme" ? !memeText.trim() : !url)
+                  }
                 >
                   {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : `Add ${contentType === "tiktok" ? "TikTok" : contentType === "meme" ? "Meme" : "Wallpaper"}`}
                 </Button>
@@ -575,6 +631,49 @@ export default function Admin() {
       <Footer />
     </div>
   );
+}
+
+function generateMemeImage(text: string): string {
+  const size = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.fillStyle = "#0a0a0a";
+  ctx.fillRect(0, 0, size, size);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(20, 20, size - 40, size - 40);
+
+  const upper = text.toUpperCase();
+  const maxWidth = size - 120;
+  let fontSize = text.length > 120 ? 60 : text.length > 60 ? 78 : text.length > 30 ? 96 : 120;
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur = 8;
+  ctx.font = `900 ${fontSize}px Impact, Arial Black, sans-serif`;
+
+  const words = upper.split(" ");
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+    else line = test;
+  }
+  lines.push(line);
+
+  const lineH = fontSize * 1.25;
+  const totalH = lines.length * lineH;
+  const startY = (size - totalH) / 2 + lineH / 2;
+  lines.forEach((l, i) => ctx.fillText(l, size / 2, startY + i * lineH, maxWidth));
+
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 function ImageList({ images, label, onDelete, isDeleting, badge }: {

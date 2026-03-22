@@ -5,7 +5,6 @@ import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Lightbox } from "@/components/Lightbox";
-import { TikTokPlayer } from "@/components/TikTokPlayer";
 import { DownloadProgressBar, type DownloadItem } from "@/components/DownloadProgressBar";
 import { useUserAuth } from "@/hooks/use-user-auth";
 import { cn, downloadWithProgress, buildProxyUrl } from "@/lib/utils";
@@ -23,15 +22,6 @@ const TYPE_TABS = [
 
 type TabId = (typeof TYPE_TABS)[number]["id"];
 
-interface TikTokPlayerState {
-  isOpen: boolean;
-  tiktokUrl: string;
-  thumbnailUrl: string;
-  title: string;
-}
-
-const EMPTY_PLAYER: TikTokPlayerState = { isOpen: false, tiktokUrl: "", thumbnailUrl: "", title: "" };
-
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, token, isReady, isAuthenticated, logout } = useUserAuth();
@@ -39,7 +29,6 @@ export default function Dashboard() {
   const [activeType, setActiveType]         = useState<TabId>("all");
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxState, setLightboxState]   = useState({ isOpen: false, index: 0 });
-  const [player, setPlayer]                 = useState<TikTokPlayerState>(EMPTY_PLAYER);
   const [downloads, setDownloads]           = useState<DownloadItem[]>([]);
 
   const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -87,9 +76,15 @@ export default function Dashboard() {
       });
   };
 
-  const handleTikTokDownload = (videoUrl: string, title: string) => {
-    const filename = `${(title || "tiktok").replace(/[^a-z0-9]/gi, "_")}.mp4`;
-    startDownload(videoUrl, filename);
+  const openTikTok = (img: { tiktokUrl?: string | null; url: string; title?: string | null; id: string }) => {
+    if (!img.tiktokUrl) return;
+    sessionStorage.setItem("tiktok-player", JSON.stringify({
+      tiktokUrl: img.tiktokUrl,
+      thumbnailUrl: img.url,
+      title: img.title || "TikTok",
+      id: img.id,
+    }));
+    setLocation("/tiktok");
   };
 
   const dismissDownload = (id: string) => setDownloads(prev => prev.filter(d => d.id !== id));
@@ -209,15 +204,7 @@ export default function Dashboard() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.3) }}
                         className="relative group rounded-2xl overflow-hidden aspect-[9/16] bg-white/5 cursor-pointer"
-                        onClick={() =>
-                          img.tiktokUrl &&
-                          setPlayer({
-                            isOpen: true,
-                            tiktokUrl: img.tiktokUrl,
-                            thumbnailUrl: img.url,
-                            title: img.title || "TikTok",
-                          })
-                        }
+                        onClick={() => openTikTok(img)}
                       >
                         <img
                           src={img.url}
@@ -322,15 +309,6 @@ export default function Dashboard() {
         isOpen={lightboxState.isOpen}
         onClose={closeLightbox}
         onNavigate={navigateLightbox}
-      />
-
-      <TikTokPlayer
-        isOpen={player.isOpen}
-        tiktokUrl={player.tiktokUrl}
-        thumbnailUrl={player.thumbnailUrl}
-        title={player.title}
-        onClose={() => setPlayer(EMPTY_PLAYER)}
-        onDownload={handleTikTokDownload}
       />
 
       <DownloadProgressBar downloads={downloads} onDismiss={dismissDownload} />
