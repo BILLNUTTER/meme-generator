@@ -160,9 +160,9 @@ export function MemeMakerPage() {
                   className="w-full h-full object-contain"
                 />
               ) : text.trim() ? (
-                <div className="w-full h-full bg-[#080808] flex items-center justify-center p-4">
+                <div className="w-full h-full bg-[#080808] flex items-center justify-start px-3 py-4">
                   <p
-                    className="text-white text-center leading-tight w-full"
+                    className="text-white text-left leading-tight w-full"
                     style={{
                       fontSize:
                         text.length > 120 ? "clamp(9px, 1.8vw, 11px)" :
@@ -176,7 +176,6 @@ export function MemeMakerPage() {
                       wordBreak: "break-word",
                       WebkitTextStroke: "0.5px #000",
                       textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
-                      minWidth: text.length <= 20 ? "67%" : undefined,
                     }}
                   >
                     {text}

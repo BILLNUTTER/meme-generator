@@ -42,7 +42,7 @@ export function generateMemeImage(text: string): string {
     text.length > 20  ? 108 : 130;
 
   ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
   // Word-wrap helper
@@ -99,6 +99,7 @@ export function generateMemeImage(text: string): string {
   const totalH = lines.length * lineH;
   const startY = (size - totalH) / 2 + lineH / 2;
 
+  const leftX = 40; // left margin in px
   lines.forEach((l, i) => {
     const y = startY + i * lineH;
     ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
@@ -107,9 +108,9 @@ export function generateMemeImage(text: string): string {
     ctx.lineWidth = fontSize * 0.12;
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#000000";
-    ctx.strokeText(l, size / 2, y, maxWidth);
+    ctx.strokeText(l, leftX, y, maxWidth);
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(l, size / 2, y, maxWidth);
+    ctx.fillText(l, leftX, y, maxWidth);
   });
 
   return canvas.toDataURL("image/jpeg", 0.93);
