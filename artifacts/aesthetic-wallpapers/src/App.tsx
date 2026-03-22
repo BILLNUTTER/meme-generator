@@ -8,10 +8,15 @@ import Home from "@/pages/Home";
 import Admin from "@/pages/Admin";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import Dashboard from "@/pages/Dashboard";
+import { Dashboard } from "@/pages/Dashboard";
 import TikTokView from "@/pages/TikTokView";
 import PesapalPayment from "@/pages/PesapalPayment";
 import NotFound from "@/pages/not-found";
+import { WallpapersPage } from "@/pages/WallpapersPage";
+import { MemesPage } from "@/pages/MemesPage";
+import { TikToksPage } from "@/pages/TikToksPage";
+import { TikTokDownloadPage } from "@/pages/TikTokDownloadPage";
+import { MemeMakerPage } from "@/pages/MemeMakerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +43,11 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/wallpapers" component={WallpapersPage} />
+      <Route path="/memes" component={MemesPage} />
+      <Route path="/tiktoks" component={TikToksPage} />
+      <Route path="/tiktok-download" component={TikTokDownloadPage} />
+      <Route path="/meme-maker" component={MemeMakerPage} />
       <Route path="/tiktok" component={TikTokView} />
       <Route path="/pay" component={PesapalPayment} />
       <Route component={NotFound} />

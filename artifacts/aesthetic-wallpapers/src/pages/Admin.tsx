@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -17,67 +17,59 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Trash2,
-  Plus,
-  Image as ImageIcon,
-  Loader2,
-  Music,
-  Laugh,
-  RefreshCw,
-  Users,
-  LayoutGrid,
-  Search,
-  Settings,
-  CreditCard,
-  CheckCircle2,
-  AlertCircle,
+  Trash2, Plus, Image as ImageIcon, Loader2, Music, Laugh,
+  RefreshCw, Users, LayoutGrid, Search, Settings, CreditCard,
+  CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { generateMemeImage } from "@/lib/generate-meme";
 
 const CATEGORIES = ["Nature", "Minimalism", "Cars", "Anime", "Vaporwave", "Memes", "Other"];
 type ContentType = "wallpaper" | "meme" | "tiktok";
+
+type Section = "overview" | "add" | "landing" | "dashboard" | "memes" | "tiktoks" | "users" | "settings";
+
+const SECTIONS: { id: Section; label: string; icon: React.ElementType; desc: string; color: string; border: string; accent: string }[] = [
+  { id: "overview",  label: "Overview",    icon: BarChart3,   desc: "Stats & recent activity",   color: "from-white/5 to-white/[0.02]",       border: "border-white/10",    accent: "text-white/70"    },
+  { id: "add",       label: "Add Content", icon: Plus,        desc: "Upload wallpapers, memes, TikToks", color: "from-blue-600/20 to-cyan-600/10",  border: "border-blue-500/20", accent: "text-blue-400"    },
+  { id: "landing",   label: "Landing",     icon: LayoutGrid,  desc: "Manage landing images",     color: "from-violet-600/20 to-purple-600/10", border: "border-violet-500/20",accent: "text-violet-400"  },
+  { id: "dashboard", label: "Dashboard",   icon: ImageIcon,   desc: "Dashboard wallpapers",      color: "from-cyan-600/20 to-teal-600/10",     border: "border-cyan-500/20", accent: "text-cyan-400"    },
+  { id: "memes",     label: "Memes",       icon: Laugh,       desc: "View & delete memes",       color: "from-yellow-600/20 to-amber-600/10",  border: "border-yellow-500/20",accent: "text-yellow-400"  },
+  { id: "tiktoks",   label: "TikToks",     icon: Music,       desc: "Manage TikTok gallery",     color: "from-pink-600/20 to-rose-600/10",     border: "border-pink-500/20", accent: "text-pink-400"    },
+  { id: "users",     label: "Users",       icon: Users,       desc: "Registered members",        color: "from-green-600/20 to-emerald-600/10", border: "border-green-500/20",accent: "text-green-400"   },
+  { id: "settings",  label: "Settings",    icon: Settings,    desc: "Pesapal payment config",    color: "from-orange-600/20 to-amber-600/10",  border: "border-orange-500/20",accent: "text-orange-400"  },
+];
 
 export default function Admin() {
   const { token, isAuthenticated, login, logout, isReady } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [activeSection, setActiveSection] = useState<Section>("overview");
 
-  // Login state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  // Content type for add form
   const [contentType, setContentType] = useState<ContentType>("wallpaper");
-
-  // Shared form state
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [destination, setDestination] = useState("landing");
-
-  // Pinterest resolution
   const [pinterestInput, setPinterestInput] = useState("");
   const [isResolvingPinterest, setIsResolvingPinterest] = useState(false);
-
-  // Meme state
   const [memeText, setMemeText] = useState("");
-
-  // TikTok state
   const [tiktokUrl, setTiktokUrl] = useState("");
   const [tiktokThumbnail, setTiktokThumbnail] = useState("");
   const [tiktokTitle, setTiktokTitle] = useState("");
   const [isResolvingTiktok, setIsResolvingTiktok] = useState(false);
 
-  // View tab
-  const [viewTab, setViewTab] = useState<"landing" | "dashboard" | "memes" | "tiktoks" | "users" | "settings">("landing");
-
-  // Pesapal settings
-  const [ppKey, setPpKey]           = useState("");
-  const [ppSecret, setPpSecret]     = useState("");
-  const [ppSandbox, setPpSandbox]   = useState(true);
-  const [ppLoading, setPpLoading]   = useState(false);
-  const [ppSaved, setPpSaved]       = useState(false);
-  const [ppError, setPpError]       = useState<string | null>(null);
+  const [ppKey, setPpKey] = useState("");
+  const [ppSecret, setPpSecret] = useState("");
+  const [ppSandbox, setPpSandbox] = useState(true);
+  const [ppLoading, setPpLoading] = useState(false);
+  const [ppSaved, setPpSaved] = useState(false);
+  const [ppError, setPpError] = useState<string | null>(null);
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   useEffect(() => {
@@ -88,8 +80,7 @@ export default function Admin() {
         if (d.pesapalConsumerKey)    setPpKey(d.pesapalConsumerKey);
         if (d.pesapalConsumerSecret) setPpSecret(d.pesapalConsumerSecret);
         if (typeof d.pesapalSandbox === "boolean") setPpSandbox(d.pesapalSandbox);
-      })
-      .catch(() => {});
+      }).catch(() => {});
   }, [isAuthenticated, token, baseUrl]);
 
   const savePesapal = async () => {
@@ -109,23 +100,17 @@ export default function Admin() {
 
   const { mutate: doLogin, isPending: isLoggingIn } = useAdminLogin({
     mutation: {
-      onSuccess: (data) => {
-        login(data.token);
-        toast({ title: "Welcome back", description: "Successfully authenticated." });
-      },
-      onError: () => {
-        toast({ variant: "destructive", title: "Access Denied", description: "Invalid credentials." });
-      },
+      onSuccess: (data) => { login(data.token); toast({ title: "Welcome back", description: "Authenticated successfully." }); },
+      onError: () => { toast({ variant: "destructive", title: "Access Denied", description: "Invalid credentials." }); },
     },
   });
 
-  // Use dashboard endpoint (no destination filter) so admin sees ALL content incl. dashboard-only TikToks
-  const { data: allImages = [], isLoading: isLoadingImages } = useGetDashboardImages(undefined, {
+  const { data: allImages = [] } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated && !!token },
   });
 
-  const { data: users = [], isLoading: isLoadingUsers } = useGetAdminUsers({
+  const { data: users = [] } = useGetAdminUsers({
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated },
   });
@@ -138,27 +123,16 @@ export default function Admin() {
   const { mutate: createImage, isPending: isCreating } = useCreateImage({
     request: { headers: { Authorization: `Bearer ${token}` } },
     mutation: {
-      onSuccess: () => {
-        invalidateAll();
-        toast({ title: "Content Added", description: "Successfully added to gallery." });
-        resetForm();
-      },
-      onError: () => {
-        toast({ variant: "destructive", title: "Error", description: "Failed to add content." });
-      },
+      onSuccess: () => { invalidateAll(); toast({ title: "Content Added", description: "Added to gallery." }); resetForm(); },
+      onError: () => { toast({ variant: "destructive", title: "Error", description: "Failed to add content." }); },
     },
   });
 
   const { mutate: deleteImage, isPending: isDeleting } = useDeleteImage({
     request: { headers: { Authorization: `Bearer ${token}` } },
     mutation: {
-      onSuccess: () => {
-        invalidateAll();
-        toast({ title: "Removed", description: "Successfully deleted." });
-      },
-      onError: () => {
-        toast({ variant: "destructive", title: "Error", description: "Failed to delete." });
-      },
+      onSuccess: () => { invalidateAll(); toast({ title: "Removed", description: "Deleted successfully." }); },
+      onError: () => { toast({ variant: "destructive", title: "Error", description: "Failed to delete." }); },
     },
   });
 
@@ -174,164 +148,98 @@ export default function Admin() {
     if (!pinterestInput) return;
     setIsResolvingPinterest(true);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
       const resp = await fetch(`${baseUrl}/api/images/resolve-pinterest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: pinterestInput }),
       });
       const data = await resp.json() as { imageUrl?: string; error?: string };
-      if (data.imageUrl) {
-        setUrl(data.imageUrl);
-        toast({ title: "Resolved!", description: "Pinterest image URL extracted." });
-      } else {
-        toast({ variant: "destructive", title: "Failed", description: data.error || "Could not resolve URL." });
-      }
-    } catch {
-      toast({ variant: "destructive", title: "Error", description: "Network error resolving Pinterest URL." });
-    } finally {
-      setIsResolvingPinterest(false);
-    }
+      if (data.imageUrl) { setUrl(data.imageUrl); toast({ title: "Resolved!", description: "Pinterest image URL extracted." }); }
+      else toast({ variant: "destructive", title: "Failed", description: data.error || "Could not resolve URL." });
+    } catch { toast({ variant: "destructive", title: "Error", description: "Network error." }); }
+    finally { setIsResolvingPinterest(false); }
   };
 
   const handleResolveTiktok = async () => {
     if (!tiktokUrl) return;
     setIsResolvingTiktok(true);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
       const resp = await fetch(`${baseUrl}/api/images/tiktok-info`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: tiktokUrl }),
       });
-      const data = await resp.json() as { thumbnail?: string; title?: string; downloadUrl?: string; error?: string };
+      const data = await resp.json() as { thumbnail?: string; title?: string; error?: string };
       if (data.thumbnail) {
-        setTiktokThumbnail(data.thumbnail);
-        setTiktokTitle(data.title || "TikTok Video");
-        setUrl(data.thumbnail);
-        setTitle(data.title || "TikTok Video");
-        toast({ title: "TikTok Resolved!", description: "Video info fetched successfully." });
-      } else {
-        toast({ variant: "destructive", title: "Failed", description: data.error || "Could not fetch TikTok info." });
-      }
-    } catch {
-      toast({ variant: "destructive", title: "Error", description: "Network error resolving TikTok." });
-    } finally {
-      setIsResolvingTiktok(false);
-    }
+        setTiktokThumbnail(data.thumbnail); setTiktokTitle(data.title || "TikTok Video");
+        setUrl(data.thumbnail); setTitle(data.title || "TikTok Video");
+        toast({ title: "TikTok Resolved!" });
+      } else toast({ variant: "destructive", title: "Failed", description: data.error || "Could not fetch TikTok info." });
+    } catch { toast({ variant: "destructive", title: "Error", description: "Network error." }); }
+    finally { setIsResolvingTiktok(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // ── Meme: generate canvas image from text ──
     if (contentType === "meme") {
-      if (!memeText.trim()) {
-        toast({ variant: "destructive", title: "Required", description: "Enter meme text first." });
-        return;
-      }
+      if (!memeText.trim()) { toast({ variant: "destructive", title: "Required", description: "Enter meme text first." }); return; }
       const dataUrl = generateMemeImage(memeText.trim());
-      createImage({
-        data: {
-          url: dataUrl,
-          title: memeText.trim().slice(0, 80) || null,
-          category: "Memes",
-          destination,
-          type: "meme",
-          tiktokUrl: null,
-        },
-      });
+      createImage({ data: { url: dataUrl, title: memeText.trim().slice(0, 80) || null, category: "Memes", destination, type: "meme", tiktokUrl: null } });
       return;
     }
-
     if (contentType === "tiktok") {
-      if (!tiktokUrl) {
-        toast({ variant: "destructive", title: "Required", description: "Paste a TikTok URL first." });
-        return;
-      }
-      // Auto-resolve if not yet done
+      if (!tiktokUrl) { toast({ variant: "destructive", title: "Required", description: "Paste a TikTok URL first." }); return; }
       if (!url) {
         setIsResolvingTiktok(true);
         try {
-          const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
           const resp = await fetch(`${baseUrl}/api/images/tiktok-info`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: tiktokUrl }),
           });
           const data = await resp.json() as { thumbnail?: string; title?: string; error?: string };
           if (data.thumbnail) {
-            setTiktokThumbnail(data.thumbnail);
-            setTiktokTitle(data.title || "TikTok Video");
-            createImage({
-              data: {
-                url: data.thumbnail,
-                title: data.title || "TikTok Video",
-                category: "TikTok",
-                destination,
-                type: "tiktok",
-                tiktokUrl,
-              },
-            });
-          } else {
-            toast({ variant: "destructive", title: "Failed", description: data.error || "Could not fetch TikTok info." });
-          }
-        } catch {
-          toast({ variant: "destructive", title: "Error", description: "Network error resolving TikTok." });
-        } finally {
-          setIsResolvingTiktok(false);
-        }
+            setTiktokThumbnail(data.thumbnail); setTiktokTitle(data.title || "TikTok Video");
+            createImage({ data: { url: data.thumbnail, title: data.title || "TikTok Video", category: "TikTok", destination, type: "tiktok", tiktokUrl } });
+          } else toast({ variant: "destructive", title: "Failed", description: data.error || "Could not fetch TikTok info." });
+        } catch { toast({ variant: "destructive", title: "Error", description: "Network error." }); }
+        finally { setIsResolvingTiktok(false); }
         return;
       }
-      // Already resolved
-      createImage({
-        data: {
-          url,
-          title: tiktokTitle || null,
-          category: "TikTok",
-          destination,
-          type: "tiktok",
-          tiktokUrl,
-        },
-      });
+      createImage({ data: { url, title: tiktokTitle || null, category: "TikTok", destination, type: "tiktok", tiktokUrl } });
       return;
     }
-
-    if (!url) {
-      toast({ variant: "destructive", title: "Required", description: "Image URL is required" });
-      return;
-    }
-    createImage({
-      data: {
-        url,
-        title: title || null,
-        category,
-        destination,
-        type: contentType,
-        tiktokUrl: null,
-      },
-    });
+    if (!url) { toast({ variant: "destructive", title: "Required", description: "Image URL is required" }); return; }
+    createImage({ data: { url, title: title || null, category, destination, type: contentType, tiktokUrl: null } });
   };
 
-  // Filtered views
-  const landingImages = allImages.filter(img => (img.destination === "landing" || img.destination === "both") && img.type !== "tiktok" && img.type !== "meme");
-  const dashboardImages = allImages.filter(img => img.destination === "dashboard" && img.type !== "tiktok" && img.type !== "meme");
-  const memeImages = allImages.filter(img => img.type === "meme");
-  const tiktokImages = allImages.filter(img => img.type === "tiktok");
+  const landingImages  = allImages.filter(i => (i.destination === "landing" || i.destination === "both") && i.type !== "tiktok" && i.type !== "meme");
+  const dashboardImages = allImages.filter(i => i.destination === "dashboard" && i.type !== "tiktok" && i.type !== "meme");
+  const memeImages     = allImages.filter(i => i.type === "meme");
+  const tiktokImages   = allImages.filter(i => i.type === "tiktok");
+
+  const scrollTo = (idx: number) => {
+    const clamped = Math.max(0, Math.min(SECTIONS.length - 1, idx));
+    const el = sliderRef.current;
+    if (!el) return;
+    const card = el.children[clamped] as HTMLElement;
+    if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    setActiveSlide(clamped);
+  };
+
+  const selectSection = (s: Section, idx: number) => {
+    setActiveSection(s);
+    if (s === "add") resetForm();
+    scrollTo(idx);
+  };
 
   if (!isReady) return null;
 
-  // Login screen
+  // ── Login ──
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center relative bg-black">
         <Header />
         <div className="absolute inset-0 z-0 bg-gradient-to-tr from-black via-zinc-900 to-black" />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 w-full max-w-md p-8 sm:p-12 glass-card rounded-3xl mx-4"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 w-full max-w-md p-8 sm:p-12 glass-card rounded-3xl mx-4">
           <div className="text-center mb-10">
             <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
               <span className="font-black text-xl text-white select-none">𝐀𝐖</span>
@@ -358,547 +266,436 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col pt-20">
+    <div className="min-h-screen flex flex-col pt-20 bg-background">
       <Header />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-10">
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-12">
         {/* Top bar */}
         <div className="flex items-center justify-between mb-10">
           <div>
             <h1 className="font-display text-4xl text-white">Admin Studio</h1>
-            <p className="text-muted-foreground mt-1">Manage your aesthetic collection</p>
+            <p className="text-white/30 text-sm mt-1">Aesthetic Wallpapers — Content Management</p>
           </div>
-          <Button variant="outline" size="sm" onClick={logout} className="border-white/10">Sign Out</Button>
+          <Button variant="outline" size="sm" onClick={logout} className="border-white/10 text-white/60 hover:text-white">
+            Sign Out
+          </Button>
         </div>
 
-        {/* Stats row */}
+        {/* ── STATS SUMMARY ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
           {[
-            { label: "Wallpapers", count: allImages.filter(i => i.type !== "meme" && i.type !== "tiktok").length, icon: ImageIcon, color: "text-blue-400" },
-            { label: "Memes", count: memeImages.length, icon: Laugh, color: "text-yellow-400" },
-            { label: "TikToks", count: tiktokImages.length, icon: Music, color: "text-pink-400" },
-            { label: "Users", count: users.length, icon: Users, color: "text-green-400" },
+            { label: "Wallpapers", count: allImages.filter(i => i.type !== "meme" && i.type !== "tiktok").length, icon: ImageIcon, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+            { label: "Memes",      count: memeImages.length,     icon: Laugh,      color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
+            { label: "TikToks",    count: tiktokImages.length,   icon: Music,      color: "text-pink-400",   bg: "bg-pink-500/10 border-pink-500/20"   },
+            { label: "Members",    count: users.length,          icon: Users,      color: "text-green-400",  bg: "bg-green-500/10 border-green-500/20"  },
           ].map(stat => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="glass-card rounded-2xl p-5 flex items-center gap-4">
-                <Icon className={cn("w-6 h-6", stat.color)} />
+              <div key={stat.label} className={`rounded-2xl p-5 border flex items-center gap-4 ${stat.bg}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.bg}`}>
+                  <Icon className={cn("w-5 h-5", stat.color)} />
+                </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stat.count}</p>
-                  <p className="text-xs text-white/50">{stat.label}</p>
+                  <p className="text-3xl font-bold text-white">{stat.count}</p>
+                  <p className="text-xs text-white/40">{stat.label}</p>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* ── Add Content Form ── */}
-          <div className="lg:col-span-1">
-            <div className="glass-card rounded-2xl p-6 sticky top-28">
-              <h2 className="text-xl font-display mb-5 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-white/60" /> Add Content
-              </h2>
-
-              {/* Type selector buttons */}
-              <div className="grid grid-cols-3 gap-2 mb-6">
-                {([
-                  { id: "wallpaper" as ContentType, label: "Wallpaper", icon: ImageIcon },
-                  { id: "meme" as ContentType, label: "Meme", icon: Laugh },
-                  { id: "tiktok" as ContentType, label: "TikTok", icon: Music },
-                ] as const).map(t => {
-                  const Icon = t.icon;
-                  return (
-                    <button
-                      key={t.id}
-                      onClick={() => { setContentType(t.id); resetForm(); }}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all duration-200",
-                        contentType === t.id
-                          ? "bg-white text-black border-white"
-                          : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white"
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {t.label}
-                    </button>
-                  );
-                })}
+        {/* ── SLIDABLE SECTION HERO ── */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-medium text-white/30 uppercase tracking-widest">Sections</p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => scrollTo(activeSlide - 1)}
+                className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all">
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <div className="flex gap-1">
+                {SECTIONS.map((_, i) => (
+                  <button key={i} onClick={() => scrollTo(i)}
+                    className={cn("h-1.5 rounded-full transition-all duration-300", activeSlide === i ? "bg-white w-4" : "bg-white/20 w-1.5")} />
+                ))}
               </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* TikTok URL resolver */}
-                {contentType === "tiktok" && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">TikTok URL</label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={tiktokUrl}
-                          onChange={e => setTiktokUrl(e.target.value)}
-                          placeholder="https://www.tiktok.com/@user/video/..."
-                          className="flex-1 text-xs"
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="secondary"
-                          onClick={handleResolveTiktok}
-                          disabled={isResolvingTiktok || !tiktokUrl}
-                          className="shrink-0"
-                        >
-                          {isResolvingTiktok ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                    {tiktokThumbnail && (
-                      <div className="rounded-xl overflow-hidden aspect-video bg-white/5 relative">
-                        <img src={tiktokThumbnail} alt="TikTok thumbnail" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
-                            <Music className="w-5 h-5 text-white" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">Title</label>
-                      <Input value={tiktokTitle} onChange={e => setTiktokTitle(e.target.value)} placeholder="TikTok title" />
-                    </div>
-                  </>
-                )}
-
-                {/* ── Meme: text input → auto-generate black+white image ── */}
-                {contentType === "meme" && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">Meme Text</label>
-                      <textarea
-                        value={memeText}
-                        onChange={e => setMemeText(e.target.value)}
-                        placeholder="Type your meme here…"
-                        rows={4}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-white/30 focus:outline-none focus:border-white/20 resize-none"
-                      />
-                      <p className="text-xs text-white/30">Auto-generates a black background + white text image</p>
-                    </div>
-                    {/* Live preview */}
-                    {memeText.trim() && (
-                      <div className="rounded-xl overflow-hidden aspect-square bg-black border border-white/10 flex items-center justify-center p-4">
-                        <p
-                          className="text-white text-center leading-tight break-words"
-                          style={{
-                            fontSize: memeText.length > 120 ? "11px" : memeText.length > 70 ? "14px" : memeText.length > 35 ? "18px" : "24px",
-                            fontFamily: "Impact, Arial Black, sans-serif",
-                            wordBreak: "break-word",
-                            WebkitTextStroke: "0.5px #000",
-                            textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
-                          }}
-                        >
-                          {memeText}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* ── Wallpaper: Pinterest resolver + direct URL ── */}
-                {contentType === "wallpaper" && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">Pinterest URL</label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={pinterestInput}
-                          onChange={e => setPinterestInput(e.target.value)}
-                          placeholder="https://pin.it/... or pinterest.com/..."
-                          className="flex-1 text-xs"
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="secondary"
-                          onClick={handleResolvePinterest}
-                          disabled={isResolvingPinterest || !pinterestInput}
-                          className="shrink-0"
-                        >
-                          {isResolvingPinterest ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-white/30">Or paste a direct image URL below</p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">Image URL</label>
-                      <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
-                    </div>
-                    {url && (
-                      <div className="rounded-xl overflow-hidden aspect-video bg-white/5">
-                        <img src={url} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">Title (Optional)</label>
-                      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="My favourite wallpaper" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-white/50 uppercase tracking-wider">Category</label>
-                      <select
-                        value={category}
-                        onChange={e => setCategory(e.target.value)}
-                        className="w-full h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-foreground focus:outline-none appearance-none"
-                      >
-                        {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-neutral-900">{cat}</option>)}
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {/* Destination — common to all types */}
-                <div className="space-y-2">
-                  <label className="text-xs text-white/50 uppercase tracking-wider">Show On</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { val: "landing", label: "Landing" },
-                      { val: "dashboard", label: "Dashboard" },
-                      { val: "both", label: "Both" },
-                    ].map(d => (
-                      <button
-                        key={d.val}
-                        type="button"
-                        onClick={() => setDestination(d.val)}
-                        className={cn(
-                          "py-2 text-xs rounded-lg border transition-all duration-200",
-                          destination === d.val
-                            ? "bg-white text-black border-white font-semibold"
-                            : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
-                        )}
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full mt-2"
-                  disabled={
-                    isCreating || isResolvingTiktok ||
-                    (contentType === "tiktok" ? !tiktokUrl : contentType === "meme" ? !memeText.trim() : !url)
-                  }
-                >
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : `Add ${contentType === "tiktok" ? "TikTok" : contentType === "meme" ? "Meme" : "Wallpaper"}`}
-                </Button>
-              </form>
+              <button onClick={() => scrollTo(activeSlide + 1)}
+                className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-
-          {/* ── Content Sections ── */}
-          <div className="lg:col-span-2">
-            {/* View Tabs */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {([
-                { id: "landing",  label: "Landing",   icon: LayoutGrid },
-                { id: "dashboard",label: "Dashboard",  icon: ImageIcon  },
-                { id: "memes",    label: "Memes",      icon: Laugh      },
-                { id: "tiktoks",  label: "TikToks",    icon: Music      },
-                { id: "users",    label: "Users",      icon: Users      },
-                { id: "settings", label: "Settings",   icon: Settings   },
-              ] as const).map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setViewTab(tab.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      viewTab === tab.id
-                        ? "bg-white text-black"
-                        : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10"
-                    )}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {isLoadingImages && viewTab !== "users" ? (
-              <div className="h-40 flex items-center justify-center glass-card rounded-2xl">
-                <Loader2 className="w-6 h-6 animate-spin text-white/50" />
-              </div>
-            ) : (
-              <>
-                {/* Landing Wallpapers */}
-                {viewTab === "landing" && <ImageList images={landingImages} label="Landing Page Wallpapers" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />}
-                {/* Dashboard Wallpapers */}
-                {viewTab === "dashboard" && <ImageList images={dashboardImages} label="Dashboard Wallpapers" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />}
-                {/* Memes */}
-                {viewTab === "memes" && <ImageList images={memeImages} label="Memes" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} badge="😂" />}
-                {/* TikToks */}
-                {viewTab === "tiktoks" && <TikTokList images={tiktokImages} onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />}
-                {/* Payment Settings */}
-                {viewTab === "settings" && (
-                  <div className="glass-card rounded-2xl p-8 space-y-6 max-w-xl">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-violet-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-display text-lg text-white">Pesapal Payment</h3>
-                        <p className="text-white/40 text-xs">Configure your Pesapal consumer credentials</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Consumer Key</label>
-                        <Input
-                          value={ppKey}
-                          onChange={e => setPpKey(e.target.value)}
-                          placeholder="Your Pesapal consumer key"
-                          className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Consumer Secret</label>
-                        <Input
-                          type="password"
-                          value={ppSecret}
-                          onChange={e => setPpSecret(e.target.value)}
-                          placeholder="Your Pesapal consumer secret"
-                          className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-sm"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
-                        <div>
-                          <p className="text-sm text-white font-medium">Sandbox mode</p>
-                          <p className="text-xs text-white/40">Use cybqa.pesapal.com for testing</p>
-                        </div>
-                        <button
-                          onClick={() => setPpSandbox(v => !v)}
-                          className={cn(
-                            "relative w-11 h-6 rounded-full transition-colors duration-300 flex items-center",
-                            ppSandbox ? "bg-violet-500" : "bg-white/20"
-                          )}
-                        >
-                          <span className={cn(
-                            "absolute w-4 h-4 rounded-full bg-white shadow transition-all duration-300",
-                            ppSandbox ? "left-6" : "left-1"
-                          )} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {ppError && (
-                      <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-                        <AlertCircle className="w-4 h-4 shrink-0" /> {ppError}
-                      </div>
-                    )}
-                    {ppSaved && (
-                      <div className="flex items-center gap-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
-                        <CheckCircle2 className="w-4 h-4 shrink-0" /> Credentials saved successfully!
-                      </div>
-                    )}
-
-                    <Button
-                      className="w-full bg-violet-600 hover:bg-violet-500"
-                      disabled={ppLoading || (!ppKey && !ppSecret)}
-                      onClick={savePesapal}
-                    >
-                      {ppLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : "Save Pesapal Credentials"}
-                    </Button>
-
-                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs text-white/35 leading-relaxed">
-                      <p className="font-semibold text-white/50 mb-1">Where to get credentials:</p>
-                      <p>Log in to your Pesapal merchant account → Go to <strong className="text-white/60">Settings → API Keys</strong>.
-                      Copy the Consumer Key and Consumer Secret and paste them above.
-                      Switch sandbox off when you are ready to accept live payments.</p>
-                    </div>
+          <div ref={sliderRef} className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none" }}>
+            {SECTIONS.map((sec, i) => {
+              const Icon = sec.icon;
+              const isActive = activeSection === sec.id;
+              return (
+                <motion.button key={sec.id} whileTap={{ scale: 0.97 }}
+                  onClick={() => selectSection(sec.id, i)}
+                  className={cn(
+                    "snap-start shrink-0 w-[160px] sm:w-[180px] rounded-2xl border p-5 text-left relative overflow-hidden transition-all duration-200",
+                    `bg-gradient-to-br ${sec.color}`, sec.border,
+                    isActive ? "ring-1 ring-white/30 shadow-lg scale-[1.02]" : "opacity-70 hover:opacity-100"
+                  )}>
+                  <div className={cn("w-9 h-9 rounded-xl border flex items-center justify-center mb-3 bg-white/5", sec.border)}>
+                    <Icon className={cn("w-4 h-4", sec.accent)} />
                   </div>
-                )}
-
-                {/* Users */}
-                {viewTab === "users" && (
-                  isLoadingUsers ? (
-                    <div className="h-40 flex items-center justify-center glass-card rounded-2xl">
-                      <Loader2 className="w-6 h-6 animate-spin text-white/50" />
-                    </div>
-                  ) : users.length === 0 ? (
-                    <div className="h-40 flex items-center justify-center glass-card rounded-2xl text-white/40">No registered users yet.</div>
-                  ) : (
-                    <div className="glass-card rounded-xl overflow-hidden">
-                      <table className="w-full text-left text-sm">
-                        <thead className="bg-white/5 border-b border-white/10 text-white/60 uppercase tracking-wider text-xs">
-                          <tr>
-                            <th className="px-6 py-4 font-medium">Name</th>
-                            <th className="px-6 py-4 font-medium">Email</th>
-                            <th className="px-6 py-4 font-medium">Joined</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                          {users.map(user => (
-                            <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
-                              <td className="px-6 py-4 font-medium text-white">{user.name}</td>
-                              <td className="px-6 py-4 text-white/70">{user.email}</td>
-                              <td className="px-6 py-4 text-white/50">{new Date(user.createdAt).toLocaleDateString()}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )
-                )}
-              </>
-            )}
+                  <p className="font-medium text-sm text-white mb-0.5">{sec.label}</p>
+                  <p className="text-white/35 text-xs leading-tight">{sec.desc}</p>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
-      </main>
 
+        {/* ── CONTENT PANEL ── */}
+        <div className="mt-2">
+
+          {/* Overview */}
+          {activeSection === "overview" && (
+            <div className="space-y-6">
+              <h2 className="font-display text-2xl text-white">Overview</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="glass-card rounded-2xl p-6">
+                  <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Recent Wallpapers</p>
+                  {landingImages.slice(0, 3).map(img => (
+                    <div key={img.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-white/5">
+                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white text-xs font-medium truncate">{img.title ?? "Untitled"}</p>
+                        <p className="text-white/30 text-xs">{img.category}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {landingImages.length === 0 && <p className="text-white/20 text-sm">No wallpapers yet</p>}
+                </div>
+                <div className="glass-card rounded-2xl p-6">
+                  <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Recent Members</p>
+                  {users.slice(0, 4).map(u => (
+                    <div key={u.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-xs text-violet-300 font-bold shrink-0">
+                        {(u.name?.[0] ?? u.email[0]).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white text-xs font-medium truncate">{u.name ?? u.email}</p>
+                        <p className="text-white/30 text-xs">{new Date(u.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {users.length === 0 && <p className="text-white/20 text-sm">No members yet</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add Content */}
+          {activeSection === "add" && (
+            <div className="max-w-xl">
+              <h2 className="font-display text-2xl text-white mb-6">Add Content</h2>
+              <div className="glass-card rounded-2xl p-6">
+                <div className="grid grid-cols-3 gap-2 mb-6">
+                  {([
+                    { id: "wallpaper" as ContentType, label: "Wallpaper", icon: ImageIcon },
+                    { id: "meme"      as ContentType, label: "Meme",      icon: Laugh    },
+                    { id: "tiktok"    as ContentType, label: "TikTok",    icon: Music    },
+                  ] as const).map(t => {
+                    const Icon = t.icon;
+                    return (
+                      <button key={t.id} onClick={() => { setContentType(t.id); resetForm(); }}
+                        className={cn("flex flex-col items-center gap-1.5 p-3 rounded-xl border text-xs font-medium transition-all duration-200",
+                          contentType === t.id ? "bg-white text-black border-white" : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white")}>
+                        <Icon className="w-4 h-4" /> {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {contentType === "tiktok" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">TikTok URL</label>
+                        <div className="flex gap-2">
+                          <Input value={tiktokUrl} onChange={e => setTiktokUrl(e.target.value)}
+                            placeholder="https://www.tiktok.com/@user/video/..." className="flex-1 text-xs" />
+                          <Button type="button" size="icon" variant="secondary"
+                            onClick={handleResolveTiktok} disabled={isResolvingTiktok || !tiktokUrl} className="shrink-0">
+                            {isResolvingTiktok ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                      {tiktokThumbnail && (
+                        <div className="rounded-xl overflow-hidden aspect-video bg-white/5 relative">
+                          <img src={tiktokThumbnail} alt="thumbnail" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+                              <Music className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">Title</label>
+                        <Input value={tiktokTitle} onChange={e => setTiktokTitle(e.target.value)} placeholder="TikTok title" />
+                      </div>
+                    </>
+                  )}
+
+                  {contentType === "meme" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">Meme Text</label>
+                        <textarea value={memeText} onChange={e => setMemeText(e.target.value)}
+                          placeholder="Type your meme here…" rows={4}
+                          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-white/30 focus:outline-none focus:border-white/20 resize-none" />
+                        <p className="text-xs text-white/30">Auto-generates a black background + white text image</p>
+                      </div>
+                      {memeText.trim() && (
+                        <div className="rounded-xl overflow-hidden aspect-square bg-black border border-white/10 flex items-center justify-center p-4">
+                          <p className="text-white text-center leading-tight break-words"
+                            style={{ fontSize: memeText.length > 120 ? "11px" : memeText.length > 70 ? "14px" : memeText.length > 35 ? "18px" : "24px",
+                              fontFamily: "Impact, Arial Black, sans-serif", wordBreak: "break-word",
+                              WebkitTextStroke: "0.5px #000",
+                              textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000" }}>
+                            {memeText}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {contentType === "wallpaper" && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">Pinterest URL</label>
+                        <div className="flex gap-2">
+                          <Input value={pinterestInput} onChange={e => setPinterestInput(e.target.value)}
+                            placeholder="https://pin.it/... or pinterest.com/..." className="flex-1 text-xs" />
+                          <Button type="button" size="icon" variant="secondary"
+                            onClick={handleResolvePinterest} disabled={isResolvingPinterest || !pinterestInput} className="shrink-0">
+                            {isResolvingPinterest ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-white/30">Or paste a direct image URL below</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">Image URL</label>
+                        <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
+                      </div>
+                      {url && (
+                        <div className="rounded-xl overflow-hidden aspect-video bg-white/5">
+                          <img src={url} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">Title (Optional)</label>
+                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="My favourite wallpaper" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs text-white/50 uppercase tracking-wider">Category</label>
+                        <select value={category} onChange={e => setCategory(e.target.value)}
+                          className="w-full h-10 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-foreground focus:outline-none appearance-none">
+                          {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-neutral-900">{cat}</option>)}
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-white/50 uppercase tracking-wider">Show On</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[{ val: "landing", label: "Landing" }, { val: "dashboard", label: "Dashboard" }, { val: "both", label: "Both" }].map(d => (
+                        <button key={d.val} type="button" onClick={() => setDestination(d.val)}
+                          className={cn("py-2 text-xs rounded-lg border transition-all duration-200",
+                            destination === d.val ? "bg-white text-black border-white font-semibold" : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10")}>
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full mt-2"
+                    disabled={isCreating || isResolvingTiktok || (contentType === "tiktok" ? !tiktokUrl : contentType === "meme" ? !memeText.trim() : !url)}>
+                    {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : `Add ${contentType === "tiktok" ? "TikTok" : contentType === "meme" ? "Meme" : "Wallpaper"}`}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Landing */}
+          {activeSection === "landing" && (
+            <div>
+              <h2 className="font-display text-2xl text-white mb-6">Landing Images</h2>
+              <ImageList images={landingImages} label="Landing" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />
+            </div>
+          )}
+
+          {/* Dashboard */}
+          {activeSection === "dashboard" && (
+            <div>
+              <h2 className="font-display text-2xl text-white mb-6">Dashboard Images</h2>
+              <ImageList images={dashboardImages} label="Dashboard" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />
+            </div>
+          )}
+
+          {/* Memes */}
+          {activeSection === "memes" && (
+            <div>
+              <h2 className="font-display text-2xl text-white mb-6">Meme Gallery</h2>
+              <ImageList images={memeImages} label="Memes" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} badge="😂" />
+            </div>
+          )}
+
+          {/* TikToks */}
+          {activeSection === "tiktoks" && (
+            <div>
+              <h2 className="font-display text-2xl text-white mb-6">TikTok Gallery</h2>
+              <TikTokList images={tiktokImages} onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />
+            </div>
+          )}
+
+          {/* Users */}
+          {activeSection === "users" && (
+            <div>
+              <h2 className="font-display text-2xl text-white mb-6">Registered Members</h2>
+              {users.length === 0 ? (
+                <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No members yet.</div>
+              ) : (
+                <div className="glass-card rounded-2xl overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {users.map(user => (
+                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-6 py-4 font-medium text-white">{user.name}</td>
+                          <td className="px-6 py-4 text-white/60">{user.email}</td>
+                          <td className="px-6 py-4 text-white/40 text-sm">{new Date(user.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Settings */}
+          {activeSection === "settings" && (
+            <div className="max-w-xl">
+              <h2 className="font-display text-2xl text-white mb-6">Pesapal Settings</h2>
+              <div className="glass-card rounded-2xl p-6 space-y-5">
+                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Pesapal Payment Gateway</p>
+                    <p className="text-white/35 text-xs">Configure your merchant credentials</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Consumer Key</label>
+                    <Input value={ppKey} onChange={e => setPpKey(e.target.value)} placeholder="Your Pesapal consumer key"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Consumer Secret</label>
+                    <Input type="password" value={ppSecret} onChange={e => setPpSecret(e.target.value)} placeholder="Your Pesapal consumer secret"
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-sm" />
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                    <div>
+                      <p className="text-sm text-white font-medium">Sandbox mode</p>
+                      <p className="text-xs text-white/35">Use cybqa.pesapal.com for testing</p>
+                    </div>
+                    <button onClick={() => setPpSandbox(v => !v)}
+                      className={cn("relative w-11 h-6 rounded-full transition-colors duration-300 flex items-center", ppSandbox ? "bg-orange-500" : "bg-white/20")}>
+                      <span className={cn("absolute w-4 h-4 rounded-full bg-white shadow transition-all duration-300", ppSandbox ? "left-6" : "left-1")} />
+                    </button>
+                  </div>
+                </div>
+                {ppError && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {ppError}
+                  </div>
+                )}
+                {ppSaved && (
+                  <div className="flex items-center gap-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Credentials saved successfully!
+                  </div>
+                )}
+                <Button className="w-full bg-orange-600 hover:bg-orange-500" disabled={ppLoading || (!ppKey && !ppSecret)} onClick={savePesapal}>
+                  {ppLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : "Save Pesapal Credentials"}
+                </Button>
+                <p className="text-xs text-white/25 leading-relaxed">
+                  Log in to your Pesapal merchant account → Settings → API Keys. Copy and paste the Consumer Key and Consumer Secret above. Disable sandbox when ready for live payments.
+                </p>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </main>
       <Footer />
     </div>
   );
 }
 
-function generateMemeImage(text: string): string {
-  const size = 1080;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-
-  // ── Background ─────────────────────────────────────
-  ctx.fillStyle = "#080808";
-  ctx.fillRect(0, 0, size, size);
-
-  // ── Hidden tiled watermark — white, 60° diagonal ──
-  ctx.save();
-  ctx.globalAlpha = 0.07;
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "18px Arial, sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  const wm = "Nutterx Technologies";
-  const wmW = 200;
-  const wmH = 85;
-  for (let row = -3; row < size / wmH + 3; row++) {
-    for (let col = -3; col < size / wmW + 3; col++) {
-      const x = col * wmW + (row % 2 === 0 ? 0 : wmW / 2);
-      const y = row * wmH;
-      ctx.save();
-      ctx.translate(x + wmW / 2, y + wmH / 2);
-      ctx.rotate(-Math.PI / 3); // 60°
-      ctx.fillText(wm, -wmW / 2, 0);
-      ctx.restore();
-    }
-  }
-  ctx.restore();
-
-  // ── Main meme text — preserve admin's casing ──────
-  const maxWidth = size - 100;
-  // Auto-scale font based on length
-  let fontSize = text.length > 140 ? 56 : text.length > 80 ? 70 : text.length > 40 ? 88 : text.length > 20 ? 108 : 130;
-
-  ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  // Word-wrap
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let line = "";
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
-    else line = test;
-  }
-  lines.push(line);
-
-  const lineH = fontSize * 1.22;
-  const totalH = lines.length * lineH;
-  const startY = (size - totalH) / 2 + lineH / 2;
-
-  lines.forEach((l, i) => {
-    const y = startY + i * lineH;
-    // Black stroke (outline) — classic meme look
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = fontSize * 0.12;
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#000000";
-    ctx.strokeText(l, size / 2, y, maxWidth);
-    // White fill on top
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(l, size / 2, y, maxWidth);
-  });
-
-  return canvas.toDataURL("image/jpeg", 0.93);
-}
-
 function ImageList({ images, label, onDelete, isDeleting, badge }: {
   images: { id: string; url: string; title?: string | null; category?: string; destination?: string }[];
-  label: string;
-  onDelete: (id: string) => void;
-  isDeleting: boolean;
-  badge?: string;
+  label: string; onDelete: (id: string) => void; isDeleting: boolean; badge?: string;
 }) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-display text-white/80 mb-4">
-        {label} <span className="text-white/40 text-sm">({images.length})</span>
-      </h2>
+    <div className="space-y-3">
+      <p className="text-white/40 text-xs">{images.length} {label.toLowerCase()}</p>
       {images.length === 0 ? (
-        <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/40">Nothing here yet.</div>
-      ) : (
-        images.map(img => (
-          <motion.div
-            key={img.id}
-            layout
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="glass-card rounded-xl p-4 flex items-center gap-4 group hover:bg-white/[0.07] transition-colors"
-          >
-            <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-white/5 relative">
-              <img src={img.url} alt={img.title || ""} className="w-full h-full object-cover" />
-              {badge && <span className="absolute top-1 left-1 text-xs">{badge}</span>}
+        <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">Nothing here yet.</div>
+      ) : images.map(img => (
+        <motion.div key={img.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+          className="glass-card rounded-xl p-4 flex items-center gap-4 group hover:bg-white/[0.07] transition-colors">
+          <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-white/5 relative">
+            <img src={img.url} alt={img.title || ""} className="w-full h-full object-cover" />
+            {badge && <span className="absolute top-1 left-1 text-xs">{badge}</span>}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-white text-sm truncate">{img.title || "Untitled"}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-white/40 bg-white/5 px-2 py-0.5 rounded">{img.category}</span>
+              <span className="text-xs text-white/30 bg-white/5 px-2 py-0.5 rounded">{img.destination}</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-white truncate">{img.title || "Untitled"}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-white/40 bg-white/5 px-2 py-0.5 rounded">{img.category}</span>
-                <span className="text-xs text-white/30 bg-white/5 px-2 py-0.5 rounded">{img.destination}</span>
-              </div>
-            </div>
-            <Button
-              variant="ghost" size="icon"
-              className="shrink-0 text-white/30 hover:text-destructive hover:bg-destructive/10"
-              onClick={() => onDelete(img.id)}
-              disabled={isDeleting}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </motion.div>
-        ))
-      )}
+          </div>
+          <Button variant="ghost" size="icon"
+            className="shrink-0 text-white/25 hover:text-destructive hover:bg-destructive/10"
+            onClick={() => onDelete(img.id)} disabled={isDeleting}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </motion.div>
+      ))}
     </div>
   );
 }
 
 function TikTokList({ images, onDelete, isDeleting }: {
   images: { id: string; url: string; title?: string | null; tiktokUrl?: string | null }[];
-  onDelete: (id: string) => void;
-  isDeleting: boolean;
+  onDelete: (id: string) => void; isDeleting: boolean;
 }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-display text-white/80 mb-4">
-        TikTok Videos <span className="text-white/40 text-sm">({images.length})</span>
-      </h2>
+      <p className="text-white/40 text-xs">{images.length} TikTok {images.length === 1 ? "video" : "videos"}</p>
       {images.length === 0 ? (
-        <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/40">No TikToks yet. Add one using the form!</div>
+        <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No TikToks yet.</div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map(img => (
             <div key={img.id} className="relative group rounded-xl overflow-hidden aspect-[9/16] bg-white/5">
               <img src={img.url} alt={img.title || "TikTok"} className="w-full h-full object-cover" />
@@ -910,11 +707,8 @@ function TikTokList({ images, onDelete, isDeleting }: {
                     className="text-pink-300 text-xs hover:underline">View original</a>
                 )}
               </div>
-              <button
-                onClick={() => onDelete(img.id)}
-                disabled={isDeleting}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/60 hover:text-red-400 hover:bg-black/80 transition-colors"
-              >
+              <button onClick={() => onDelete(img.id)} disabled={isDeleting}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/60 hover:text-red-400 hover:bg-black/80 transition-colors">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
