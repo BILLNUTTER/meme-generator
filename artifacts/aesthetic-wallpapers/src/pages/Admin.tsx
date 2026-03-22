@@ -446,10 +446,16 @@ export default function Admin() {
                     {memeText.trim() && (
                       <div className="rounded-xl overflow-hidden aspect-square bg-black border border-white/10 flex items-center justify-center p-4">
                         <p
-                          className="text-white text-center font-black uppercase leading-tight break-words"
-                          style={{ fontSize: memeText.length > 80 ? "14px" : memeText.length > 40 ? "18px" : "24px", fontFamily: "Impact, Arial Black, sans-serif", wordBreak: "break-word" }}
+                          className="text-white text-center font-black leading-tight break-words"
+                          style={{
+                            fontSize: memeText.length > 120 ? "11px" : memeText.length > 70 ? "14px" : memeText.length > 35 ? "18px" : "24px",
+                            fontFamily: "Impact, Arial Black, sans-serif",
+                            wordBreak: "break-word",
+                            WebkitTextStroke: "0.5px #000",
+                            textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
+                          }}
                         >
-                          {memeText.toUpperCase()}
+                          {memeText}
                         </p>
                       </div>
                     )}
@@ -640,25 +646,45 @@ function generateMemeImage(text: string): string {
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.fillStyle = "#0a0a0a";
+  // ── Background ─────────────────────────────────────
+  ctx.fillStyle = "#080808";
   ctx.fillRect(0, 0, size, size);
 
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(20, 20, size - 40, size - 40);
+  // ── Hidden tiled watermark "nutterx" ──────────────
+  // Very low opacity, small text, diagonal tile — invisible casually but embedded
+  ctx.save();
+  ctx.globalAlpha = 0.045;
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  const wm = "nutterx";
+  const wmW = 120;
+  const wmH = 90;
+  for (let row = -2; row < size / wmH + 2; row++) {
+    for (let col = -2; col < size / wmW + 2; col++) {
+      const x = col * wmW + (row % 2 === 0 ? 0 : wmW / 2);
+      const y = row * wmH;
+      ctx.save();
+      ctx.translate(x + wmW / 2, y + wmH / 2);
+      ctx.rotate(-Math.PI / 6);
+      ctx.fillText(wm, -wmW / 2, 0);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
 
-  const upper = text.toUpperCase();
-  const maxWidth = size - 120;
-  let fontSize = text.length > 120 ? 60 : text.length > 60 ? 78 : text.length > 30 ? 96 : 120;
+  // ── Main meme text — preserve admin's casing ──────
+  const maxWidth = size - 100;
+  // Auto-scale font based on length
+  let fontSize = text.length > 140 ? 56 : text.length > 80 ? 70 : text.length > 40 ? 88 : text.length > 20 ? 108 : 130;
 
+  ctx.font = `900 ${fontSize}px Impact, "Arial Black", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = "rgba(0,0,0,0.8)";
-  ctx.shadowBlur = 8;
-  ctx.font = `900 ${fontSize}px Impact, Arial Black, sans-serif`;
 
-  const words = upper.split(" ");
+  // Word-wrap
+  const words = text.split(" ");
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -668,12 +694,25 @@ function generateMemeImage(text: string): string {
   }
   lines.push(line);
 
-  const lineH = fontSize * 1.25;
+  const lineH = fontSize * 1.22;
   const totalH = lines.length * lineH;
   const startY = (size - totalH) / 2 + lineH / 2;
-  lines.forEach((l, i) => ctx.fillText(l, size / 2, startY + i * lineH, maxWidth));
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  lines.forEach((l, i) => {
+    const y = startY + i * lineH;
+    // Black stroke (outline) — classic meme look
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = fontSize * 0.12;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText(l, size / 2, y, maxWidth);
+    // White fill on top
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(l, size / 2, y, maxWidth);
+  });
+
+  return canvas.toDataURL("image/jpeg", 0.93);
 }
 
 function ImageList({ images, label, onDelete, isDeleting, badge }: {
