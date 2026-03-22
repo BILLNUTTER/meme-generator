@@ -68,6 +68,7 @@ export default function Admin() {
   const [ppKey, setPpKey] = useState("");
   const [ppSecret, setPpSecret] = useState("");
   const [ppSandbox, setPpSandbox] = useState(true);
+  const [ppDirectUrl, setPpDirectUrl] = useState("");
   const [ppLoading, setPpLoading] = useState(false);
   const [ppSaved, setPpSaved] = useState(false);
   const [ppError, setPpError] = useState<string | null>(null);
@@ -82,10 +83,11 @@ export default function Admin() {
     if (!isAuthenticated || !token) return;
     fetch(`${baseUrl}/api/settings/pesapal`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
-      .then((d: { pesapalConsumerKey?: string; pesapalConsumerSecret?: string; pesapalSandbox?: boolean }) => {
+      .then((d: { pesapalConsumerKey?: string; pesapalConsumerSecret?: string; pesapalSandbox?: boolean; pesapalDirectUrl?: string }) => {
         if (d.pesapalConsumerKey)    setPpKey(d.pesapalConsumerKey);
         if (d.pesapalConsumerSecret) setPpSecret(d.pesapalConsumerSecret);
         if (typeof d.pesapalSandbox === "boolean") setPpSandbox(d.pesapalSandbox);
+        if (d.pesapalDirectUrl)      setPpDirectUrl(d.pesapalDirectUrl);
       }).catch(() => {});
   }, [isAuthenticated, token, baseUrl]);
 
@@ -95,7 +97,7 @@ export default function Admin() {
       const res = await fetch(`${baseUrl}/api/settings/pesapal`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ pesapalConsumerKey: ppKey, pesapalConsumerSecret: ppSecret, pesapalSandbox: ppSandbox }),
+        body: JSON.stringify({ pesapalConsumerKey: ppKey, pesapalConsumerSecret: ppSecret, pesapalSandbox: ppSandbox, pesapalDirectUrl: ppDirectUrl }),
       });
       const d = await res.json() as { success?: boolean; error?: string };
       if (d.success) { setPpSaved(true); setTimeout(() => setPpSaved(false), 3000); }
@@ -794,7 +796,37 @@ export default function Admin() {
                     <p className="text-white/35 text-xs">Configure your merchant credentials</p>
                   </div>
                 </div>
+                {/* Direct Payment URL — priority method */}
+                <div className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-white text-[10px] font-bold">1</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-orange-300">Direct Payment Link <span className="text-orange-400/70 font-normal text-xs">(recommended — no API setup needed)</span></p>
+                      <p className="text-xs text-white/40 mt-0.5">Paste your Pesapal "Pay by Link" URL here. It opens directly in the payment window — no credentials required.</p>
+                    </div>
+                  </div>
+                  <Input
+                    value={ppDirectUrl}
+                    onChange={e => setPpDirectUrl(e.target.value)}
+                    placeholder="https://pay.pesapal.com/checkout/link/..."
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-xs"
+                  />
+                  <p className="text-[11px] text-white/30">From your Pesapal dashboard → Pay by Link → Create Link (set amount to Ksh 70) → Copy Link.</p>
+                </div>
+
+                {/* API Credentials — fallback method */}
                 <div className="space-y-4">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-white/60 text-[10px] font-bold">2</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white/70">API Credentials <span className="text-white/30 font-normal text-xs">(fallback — requires valid keys)</span></p>
+                      <p className="text-xs text-white/30 mt-0.5">Used only if no Direct Link is set above.</p>
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Consumer Key</label>
                     <Input value={ppKey} onChange={e => setPpKey(e.target.value)} placeholder="Your Pesapal consumer key"
@@ -823,15 +855,12 @@ export default function Admin() {
                 )}
                 {ppSaved && (
                   <div className="flex items-center gap-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Credentials saved successfully!
+                    <CheckCircle2 className="w-4 h-4 shrink-0" /> Settings saved successfully!
                   </div>
                 )}
-                <Button className="w-full bg-orange-600 hover:bg-orange-500" disabled={ppLoading || (!ppKey && !ppSecret)} onClick={savePesapal}>
-                  {ppLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : "Save Pesapal Credentials"}
+                <Button className="w-full bg-orange-600 hover:bg-orange-500" disabled={ppLoading} onClick={savePesapal}>
+                  {ppLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : "Save Payment Settings"}
                 </Button>
-                <p className="text-xs text-white/25 leading-relaxed">
-                  Log in to your Pesapal merchant account → Settings → API Keys. Copy and paste the Consumer Key and Consumer Secret above. Keep Sandbox ON — your sandbox credentials work for real M-Pesa STK prompts on cybqa.pesapal.com.
-                </p>
               </div>
             </div>
           )}

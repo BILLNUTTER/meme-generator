@@ -4,7 +4,7 @@ import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-const PESAPAL_KEYS = ["pesapalConsumerKey", "pesapalConsumerSecret", "pesapalSandbox"] as const;
+const PESAPAL_KEYS = ["pesapalConsumerKey", "pesapalConsumerSecret", "pesapalSandbox", "pesapalDirectUrl"] as const;
 
 router.get("/settings/pesapal", requireAuth, async (_req, res): Promise<void> => {
   const docs = await SettingsModel.find({ key: { $in: PESAPAL_KEYS } });
@@ -13,17 +13,25 @@ router.get("/settings/pesapal", requireAuth, async (_req, res): Promise<void> =>
   res.json(result);
 });
 
+// Public endpoint — returns only the direct payment URL (no secrets)
+router.get("/settings/payment-url", async (_req, res): Promise<void> => {
+  const doc = await SettingsModel.findOne({ key: "pesapalDirectUrl" });
+  res.json({ url: (doc?.value as string) || null });
+});
+
 router.put("/settings/pesapal", requireAuth, async (req, res): Promise<void> => {
-  const { pesapalConsumerKey, pesapalConsumerSecret, pesapalSandbox } = req.body as {
+  const { pesapalConsumerKey, pesapalConsumerSecret, pesapalSandbox, pesapalDirectUrl } = req.body as {
     pesapalConsumerKey?: string;
     pesapalConsumerSecret?: string;
     pesapalSandbox?: boolean;
+    pesapalDirectUrl?: string;
   };
 
   const updates: { key: string; value: unknown }[] = [];
-  if (pesapalConsumerKey !== undefined)  updates.push({ key: "pesapalConsumerKey",    value: pesapalConsumerKey });
+  if (pesapalConsumerKey !== undefined)    updates.push({ key: "pesapalConsumerKey",    value: pesapalConsumerKey });
   if (pesapalConsumerSecret !== undefined) updates.push({ key: "pesapalConsumerSecret", value: pesapalConsumerSecret });
-  if (pesapalSandbox !== undefined)      updates.push({ key: "pesapalSandbox",         value: pesapalSandbox });
+  if (pesapalSandbox !== undefined)        updates.push({ key: "pesapalSandbox",         value: pesapalSandbox });
+  if (pesapalDirectUrl !== undefined)      updates.push({ key: "pesapalDirectUrl",       value: pesapalDirectUrl });
 
   await Promise.all(
     updates.map(u => SettingsModel.findOneAndUpdate({ key: u.key }, { value: u.value }, { upsert: true }))
