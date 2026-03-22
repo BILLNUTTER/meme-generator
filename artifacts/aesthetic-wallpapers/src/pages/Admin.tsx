@@ -20,6 +20,7 @@ import {
   Trash2, Plus, Image as ImageIcon, Loader2, Music, Laugh,
   RefreshCw, Users, LayoutGrid, Search, Settings, CreditCard,
   CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, BarChart3,
+  ShieldOff, ShieldCheck, DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateMemeImage } from "@/lib/generate-meme";
@@ -72,6 +73,11 @@ export default function Admin() {
   const [ppError, setPpError] = useState<string | null>(null);
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+  type RevenueData = { total: number; completedTotal: number; count: number; completedCount: number; payments: { id: string; email?: string | null; phone?: string | null; amount: number; currency: string; description: string; status: string; createdAt: string }[] };
+  const [revenue, setRevenue] = useState<RevenueData | null>(null);
+  const [suspendLoading, setSuspendLoading] = useState<string | null>(null);
+  const [localUsers, setLocalUsers] = useState<typeof users>([]);
+
   useEffect(() => {
     if (!isAuthenticated || !token) return;
     fetch(`${baseUrl}/api/settings/pesapal`, { headers: { Authorization: `Bearer ${token}` } })
@@ -114,6 +120,29 @@ export default function Admin() {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated },
   });
+
+  useEffect(() => { setLocalUsers(users as typeof localUsers); }, [users]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+    fetch(`${baseUrl}/api/admin/revenue`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setRevenue(d as RevenueData)).catch(() => {});
+  }, [isAuthenticated, token, baseUrl]);
+
+  const handleSuspend = async (userId: string, suspend: boolean) => {
+    setSuspendLoading(userId);
+    try {
+      const res = await fetch(`${baseUrl}/api/admin/users/${userId}/suspend`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ suspended: suspend }),
+      });
+      const updated = await res.json() as { id: string; suspended: boolean };
+      setLocalUsers(prev => prev.map(u => u.id === userId ? { ...u, suspended: updated.suspended } : u));
+      toast({ title: suspend ? "User suspended" : "User reinstated", description: suspend ? "User cannot log in." : "User can log in again." });
+    } catch { toast({ variant: "destructive", title: "Error", description: "Could not update user." }); }
+    finally { setSuspendLoading(null); }
+  };
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getGetImagesQueryKey() });
@@ -242,7 +271,7 @@ export default function Admin() {
           className="relative z-10 w-full max-w-md p-8 sm:p-12 glass-card rounded-3xl mx-4">
           <div className="text-center mb-10">
             <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-              <span className="font-black text-xl text-white select-none">𝐀𝐖</span>
+              <span className="font-black text-xl text-white select-none">𝐀</span>
             </div>
             <h1 className="font-display text-4xl text-white mb-3">Admin Portal</h1>
             <p className="text-white/50 text-sm">Enter your credentials to manage the gallery.</p>
@@ -287,7 +316,7 @@ export default function Admin() {
             { label: "Wallpapers", count: allImages.filter(i => i.type !== "meme" && i.type !== "tiktok").length, icon: ImageIcon, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
             { label: "Memes",      count: memeImages.length,     icon: Laugh,      color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
             { label: "TikToks",    count: tiktokImages.length,   icon: Music,      color: "text-pink-400",   bg: "bg-pink-500/10 border-pink-500/20"   },
-            { label: "Members",    count: users.length,          icon: Users,      color: "text-green-400",  bg: "bg-green-500/10 border-green-500/20"  },
+            { label: "Members",    count: localUsers.length,     icon: Users,      color: "text-green-400",  bg: "bg-green-500/10 border-green-500/20"  },
           ].map(stat => {
             const Icon = stat.icon;
             return (
@@ -355,6 +384,58 @@ export default function Admin() {
           {activeSection === "overview" && (
             <div className="space-y-6">
               <h2 className="font-display text-2xl text-white">Overview</h2>
+
+              {/* Revenue cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="glass-card rounded-2xl p-5 border border-emerald-500/20 bg-emerald-500/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="w-4 h-4 text-emerald-400" />
+                    <p className="text-xs text-white/40 uppercase tracking-wider">Total Revenue</p>
+                  </div>
+                  <p className="text-2xl font-bold text-white">
+                    {revenue ? `Ksh ${(revenue.completedTotal ?? revenue.total ?? 0).toLocaleString()}` : "—"}
+                  </p>
+                  <p className="text-xs text-white/30 mt-1">{revenue ? `${revenue.completedCount ?? revenue.count ?? 0} completed payments` : "Loading…"}</p>
+                </div>
+                <div className="glass-card rounded-2xl p-5 border border-blue-500/20 bg-blue-500/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart3 className="w-4 h-4 text-blue-400" />
+                    <p className="text-xs text-white/40 uppercase tracking-wider">All Payments</p>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{revenue ? (revenue.count ?? 0) : "—"}</p>
+                  <p className="text-xs text-white/30 mt-1">{revenue ? `Ksh ${(revenue.total ?? 0).toLocaleString()} pending+completed` : "Loading…"}</p>
+                </div>
+                <div className="glass-card rounded-2xl p-5 col-span-2 sm:col-span-1 border border-white/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-violet-400" />
+                    <p className="text-xs text-white/40 uppercase tracking-wider">Active Users</p>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{localUsers.filter((u: { suspended?: boolean }) => !u.suspended).length}</p>
+                  <p className="text-xs text-white/30 mt-1">{localUsers.filter((u: { suspended?: boolean }) => u.suspended).length} suspended</p>
+                </div>
+              </div>
+
+              {/* Recent payments */}
+              {revenue && (revenue.payments ?? []).length > 0 && (
+                <div className="glass-card rounded-2xl p-6">
+                  <p className="text-xs text-white/40 uppercase tracking-wider mb-4">Recent Payments</p>
+                  <div className="space-y-3">
+                    {(revenue.payments ?? []).slice(0, 5).map(p => (
+                      <div key={p.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
+                        <div className={cn("w-2 h-2 rounded-full shrink-0", p.status === "completed" ? "bg-green-400" : "bg-yellow-400")} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-medium truncate">{p.description || "Payment"}</p>
+                          <p className="text-white/30 text-xs">{p.email || p.phone || "—"} · {new Date(p.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <span className={cn("text-xs font-bold shrink-0", p.status === "completed" ? "text-green-400" : "text-yellow-400")}>
+                          Ksh {p.amount}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="glass-card rounded-2xl p-6">
                   <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Recent Wallpapers</p>
@@ -373,7 +454,7 @@ export default function Admin() {
                 </div>
                 <div className="glass-card rounded-2xl p-6">
                   <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Recent Members</p>
-                  {users.slice(0, 4).map(u => (
+                  {localUsers.slice(0, 4).map((u: { id: string; name: string; email: string; createdAt: string }) => (
                     <div key={u.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
                       <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-xs text-violet-300 font-bold shrink-0">
                         {(u.name?.[0] ?? u.email[0]).toUpperCase()}
@@ -384,7 +465,7 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
-                  {users.length === 0 && <p className="text-white/20 text-sm">No members yet</p>}
+                  {localUsers.length === 0 && <p className="text-white/20 text-sm">No members yet</p>}
                 </div>
               </div>
             </div>
@@ -560,8 +641,9 @@ export default function Admin() {
           {/* Users */}
           {activeSection === "users" && (
             <div>
-              <h2 className="font-display text-2xl text-white mb-6">Registered Members</h2>
-              {users.length === 0 ? (
+              <h2 className="font-display text-2xl text-white mb-2">Registered Members</h2>
+              <p className="text-white/30 text-sm mb-6">{localUsers.length} members · Suspend to block login access</p>
+              {localUsers.length === 0 ? (
                 <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No members yet.</div>
               ) : (
                 <div className="glass-card rounded-2xl overflow-hidden">
@@ -569,16 +651,43 @@ export default function Admin() {
                     <thead>
                       <tr className="border-b border-white/10">
                         <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Joined</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider hidden sm:table-cell">Email</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider hidden md:table-cell">Joined</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-right text-xs font-medium text-white/40 uppercase tracking-wider">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {users.map(user => (
-                        <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                      {localUsers.map((user: { id: string; name: string; email: string; suspended?: boolean; createdAt: string }) => (
+                        <tr key={user.id} className={cn("hover:bg-white/[0.02] transition-colors", user.suspended && "opacity-50")}>
                           <td className="px-6 py-4 font-medium text-white">{user.name}</td>
-                          <td className="px-6 py-4 text-white/60">{user.email}</td>
-                          <td className="px-6 py-4 text-white/40 text-sm">{new Date(user.createdAt).toLocaleDateString()}</td>
+                          <td className="px-6 py-4 text-white/60 hidden sm:table-cell">{user.email}</td>
+                          <td className="px-6 py-4 text-white/40 text-sm hidden md:table-cell">{new Date(user.createdAt).toLocaleDateString()}</td>
+                          <td className="px-6 py-4">
+                            {user.suspended
+                              ? <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-1 rounded-full">Suspended</span>
+                              : <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-full">Active</span>
+                            }
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleSuspend(user.id, !user.suspended)}
+                              disabled={suspendLoading === user.id}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                                user.suspended
+                                  ? "bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20"
+                                  : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
+                              )}
+                            >
+                              {suspendLoading === user.id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : user.suspended
+                                  ? <><ShieldCheck className="w-3 h-3" /> Reinstate</>
+                                  : <><ShieldOff className="w-3 h-3" /> Suspend</>
+                              }
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

@@ -5,7 +5,7 @@ import { ArrowLeft, Music, Play } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useUserAuth } from "@/hooks/use-user-auth";
-import { useGetImages } from "@workspace/api-client-react";
+import { useGetDashboardImages } from "@workspace/api-client-react";
 
 export function TikToksPage() {
   const [, setLocation] = useLocation();
@@ -15,7 +15,7 @@ export function TikToksPage() {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
-  const { data } = useGetImages(undefined, {
+  const { data } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` } },
   });
 

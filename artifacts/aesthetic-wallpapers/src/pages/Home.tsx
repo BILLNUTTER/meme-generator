@@ -196,10 +196,12 @@ export default function Home() {
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        {img.type !== "meme" && (
                         <div className="absolute inset-0 flex flex-col justify-end p-6">
                           <p className="text-white font-display text-xl mb-1">{img.title || "Untitled"}</p>
                           <p className="text-white/50 text-xs uppercase tracking-widest">{img.category}</p>
                         </div>
+                      )}
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="bg-black/60 backdrop-blur-sm border border-white/20 rounded-2xl px-5 py-3 flex items-center gap-2 text-sm font-medium text-white">
                             <Lock className="w-4 h-4" /> Register to download free
@@ -325,14 +327,11 @@ export default function Home() {
                   <Button size="lg" className="rounded-full px-8">Start Free</Button>
                 </Link>
               )}
-              <Button
-                variant="outline"
-                size="lg"
-                className="rounded-full px-8 border-green-500/30 text-green-400 hover:bg-green-500/10 gap-2"
-                onClick={() => window.open("https://whatsapp.com/channel/0029Vb6rOQtEAKW7qpF7w50d", "_blank")}
-              >
-                <MessageCircle className="w-4 h-4" /> Upgrade via WhatsApp
-              </Button>
+              {isLoggedIn && (
+                <Link href="/pay">
+                  <Button size="lg" className="rounded-full px-8">Upgrade — Ksh 70/month</Button>
+                </Link>
+              )}
             </div>
           </div>
         </section>

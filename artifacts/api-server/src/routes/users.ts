@@ -58,6 +58,11 @@ router.post("/users/login", async (req, res): Promise<void> => {
     return;
   }
 
+  if (user.suspended) {
+    res.status(403).json({ error: "Your account has been suspended. Contact support on WhatsApp: +254713881613" });
+    return;
+  }
+
   const token = generateUserToken(user._id.toString(), user.email as string, user.name as string);
   res.json({ token, user: toUserJson(user) });
 });

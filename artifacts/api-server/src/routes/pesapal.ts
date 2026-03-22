@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import https from "https";
-import { SettingsModel } from "../lib/mongodb";
+import { SettingsModel, PaymentModel } from "../lib/mongodb";
 import { requireUserAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -75,8 +75,8 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
 
     let ipnId: string;
     try {
-      const appDomain = process.env.REPLIT_DEV_DOMAIN || "localhost";
-      const ipnUrl = `https://${appDomain}/api/pesapal/ipn`;
+      const appUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:3000");
+      const ipnUrl = `${appUrl}/api/pesapal/ipn`;
       const ipnRes = await pesapalPost(hostname, `${base}/URLSetup/RegisterIPN`, {
         url: ipnUrl,
         ipn_notification_type: "POST",
@@ -87,12 +87,13 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
     }
 
     const ref = merchantRef || `AW-${Date.now()}`;
+    const appUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:3000");
     const orderRes = await pesapalPost(hostname, `${base}/Transactions/SubmitOrderRequest`, {
       id: ref,
       currency,
       amount,
       description: description || "Aesthetic Wallpapers Subscription",
-      callback_url: `https://${process.env.REPLIT_DEV_DOMAIN || "localhost"}/pay/success`,
+      callback_url: `${appUrl}/pay/success`,
       notification_id: ipnId,
       billing_address: {
         email_address: email || "",
@@ -102,6 +103,18 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
     }, token) as { redirect_url?: string; order_tracking_id?: string; error?: string; message?: string };
 
     if (!orderRes.redirect_url) throw new Error(orderRes.message || "No redirect URL returned");
+
+    await PaymentModel.create({
+      userId: (req as { user?: { id?: string } }).user?.id || null,
+      email: email || null,
+      phone: phone || null,
+      amount,
+      currency,
+      description: description || "Aesthetic Wallpapers Subscription",
+      orderTrackingId: orderRes.order_tracking_id || null,
+      merchantRef: ref,
+      status: "initiated",
+    }).catch(() => {});
 
     res.json({
       redirectUrl: orderRes.redirect_url,

@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useUserAuth } from "@/hooks/use-user-auth";
-import { ArrowLeft, Loader2, AlertCircle, CreditCard } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, CreditCard, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -111,8 +111,20 @@ export default function PesapalPayment() {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-                  <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                  <a
+                    href="https://wa.me/254713881613"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium hover:bg-green-500/20 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Contact Support on WhatsApp
+                  </a>
                 </div>
               )}
 

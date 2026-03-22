@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
+    suspended: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );
@@ -42,6 +43,22 @@ const settingsSchema = new mongoose.Schema(
   { timestamps: false }
 );
 
+const paymentSchema = new mongoose.Schema(
+  {
+    userId: { type: String, default: null },
+    email: { type: String, default: null },
+    phone: { type: String, default: null },
+    amount: { type: Number, required: true },
+    currency: { type: String, default: "KES" },
+    description: { type: String, default: "" },
+    orderTrackingId: { type: String, default: null },
+    merchantRef: { type: String, default: null },
+    status: { type: String, default: "initiated", enum: ["initiated", "completed", "failed"] },
+  },
+  { timestamps: { createdAt: "createdAt", updatedAt: false } }
+);
+
 export const ImageModel    = mongoose.model("Image",    imageSchema);
 export const UserModel     = mongoose.model("User",     userSchema);
 export const SettingsModel = mongoose.model("Settings", settingsSchema);
+export const PaymentModel  = mongoose.model("Payment",  paymentSchema);

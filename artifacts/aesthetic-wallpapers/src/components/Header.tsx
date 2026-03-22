@@ -39,10 +39,10 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors duration-300">
-            <span className="font-black text-sm text-white/90 tracking-tight select-none">𝐀𝐖</span>
+            <span className="font-black text-sm text-white/90 tracking-tight select-none">𝐀</span>
           </div>
           <span className="font-display text-xl font-medium tracking-widest uppercase text-white/90">
-            Aesthetic
+            𝐀𝐄𝐒𝐓𝐓𝐇𝐄𝐓𝐈𝐂𝐒
           </span>
         </Link>
 

@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Lightbox } from "@/components/Lightbox";
 import { useUserAuth } from "@/hooks/use-user-auth";
-import { useGetImages } from "@workspace/api-client-react";
+import { useGetDashboardImages } from "@workspace/api-client-react";
 import { buildProxyUrl, downloadWithProgress } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -25,13 +25,12 @@ export function WallpapersPage() {
 
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-  const { data } = useGetImages(undefined, {
+  const { data } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` } },
   });
 
   const allImages = (data?.data ?? []).filter(
-    (img) => img.type !== "meme" && img.type !== "tiktok" &&
-      (img.destination === "dashboard" || img.destination === "both")
+    (img) => img.type !== "meme" && img.type !== "tiktok"
   );
 
   const filtered = activeCategory === "All"
