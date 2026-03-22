@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -27,6 +27,10 @@ import {
   Users,
   LayoutGrid,
   Search,
+  Settings,
+  CreditCard,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +69,43 @@ export default function Admin() {
   const [isResolvingTiktok, setIsResolvingTiktok] = useState(false);
 
   // View tab
-  const [viewTab, setViewTab] = useState<"landing" | "dashboard" | "memes" | "tiktoks" | "users">("landing");
+  const [viewTab, setViewTab] = useState<"landing" | "dashboard" | "memes" | "tiktoks" | "users" | "settings">("landing");
+
+  // Pesapal settings
+  const [ppKey, setPpKey]           = useState("");
+  const [ppSecret, setPpSecret]     = useState("");
+  const [ppSandbox, setPpSandbox]   = useState(true);
+  const [ppLoading, setPpLoading]   = useState(false);
+  const [ppSaved, setPpSaved]       = useState(false);
+  const [ppError, setPpError]       = useState<string | null>(null);
+  const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+    fetch(`${baseUrl}/api/settings/pesapal`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((d: { pesapalConsumerKey?: string; pesapalConsumerSecret?: string; pesapalSandbox?: boolean }) => {
+        if (d.pesapalConsumerKey)    setPpKey(d.pesapalConsumerKey);
+        if (d.pesapalConsumerSecret) setPpSecret(d.pesapalConsumerSecret);
+        if (typeof d.pesapalSandbox === "boolean") setPpSandbox(d.pesapalSandbox);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, token, baseUrl]);
+
+  const savePesapal = async () => {
+    setPpLoading(true); setPpError(null); setPpSaved(false);
+    try {
+      const res = await fetch(`${baseUrl}/api/settings/pesapal`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ pesapalConsumerKey: ppKey, pesapalConsumerSecret: ppSecret, pesapalSandbox: ppSandbox }),
+      });
+      const d = await res.json() as { success?: boolean; error?: string };
+      if (d.success) { setPpSaved(true); setTimeout(() => setPpSaved(false), 3000); }
+      else setPpError(d.error || "Save failed.");
+    } catch { setPpError("Network error."); }
+    finally { setPpLoading(false); }
+  };
 
   const { mutate: doLogin, isPending: isLoggingIn } = useAdminLogin({
     mutation: {
@@ -558,11 +598,12 @@ export default function Admin() {
             {/* View Tabs */}
             <div className="flex flex-wrap gap-2 mb-6">
               {([
-                { id: "landing", label: "Landing", icon: LayoutGrid },
-                { id: "dashboard", label: "Dashboard", icon: ImageIcon },
-                { id: "memes", label: "Memes", icon: Laugh },
-                { id: "tiktoks", label: "TikToks", icon: Music },
-                { id: "users", label: "Users", icon: Users },
+                { id: "landing",  label: "Landing",   icon: LayoutGrid },
+                { id: "dashboard",label: "Dashboard",  icon: ImageIcon  },
+                { id: "memes",    label: "Memes",      icon: Laugh      },
+                { id: "tiktoks",  label: "TikToks",    icon: Music      },
+                { id: "users",    label: "Users",      icon: Users      },
+                { id: "settings", label: "Settings",   icon: Settings   },
               ] as const).map(tab => {
                 const Icon = tab.icon;
                 return (
@@ -597,6 +638,87 @@ export default function Admin() {
                 {viewTab === "memes" && <ImageList images={memeImages} label="Memes" onDelete={id => deleteImage({ id })} isDeleting={isDeleting} badge="😂" />}
                 {/* TikToks */}
                 {viewTab === "tiktoks" && <TikTokList images={tiktokImages} onDelete={id => deleteImage({ id })} isDeleting={isDeleting} />}
+                {/* Payment Settings */}
+                {viewTab === "settings" && (
+                  <div className="glass-card rounded-2xl p-8 space-y-6 max-w-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-display text-lg text-white">Pesapal Payment</h3>
+                        <p className="text-white/40 text-xs">Configure your Pesapal consumer credentials</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Consumer Key</label>
+                        <Input
+                          value={ppKey}
+                          onChange={e => setPpKey(e.target.value)}
+                          placeholder="Your Pesapal consumer key"
+                          className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Consumer Secret</label>
+                        <Input
+                          type="password"
+                          value={ppSecret}
+                          onChange={e => setPpSecret(e.target.value)}
+                          placeholder="Your Pesapal consumer secret"
+                          className="bg-white/5 border-white/10 text-white placeholder:text-white/20 font-mono text-sm"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+                        <div>
+                          <p className="text-sm text-white font-medium">Sandbox mode</p>
+                          <p className="text-xs text-white/40">Use cybqa.pesapal.com for testing</p>
+                        </div>
+                        <button
+                          onClick={() => setPpSandbox(v => !v)}
+                          className={cn(
+                            "relative w-11 h-6 rounded-full transition-colors duration-300 flex items-center",
+                            ppSandbox ? "bg-violet-500" : "bg-white/20"
+                          )}
+                        >
+                          <span className={cn(
+                            "absolute w-4 h-4 rounded-full bg-white shadow transition-all duration-300",
+                            ppSandbox ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {ppError && (
+                      <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                        <AlertCircle className="w-4 h-4 shrink-0" /> {ppError}
+                      </div>
+                    )}
+                    {ppSaved && (
+                      <div className="flex items-center gap-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" /> Credentials saved successfully!
+                      </div>
+                    )}
+
+                    <Button
+                      className="w-full bg-violet-600 hover:bg-violet-500"
+                      disabled={ppLoading || (!ppKey && !ppSecret)}
+                      onClick={savePesapal}
+                    >
+                      {ppLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : "Save Pesapal Credentials"}
+                    </Button>
+
+                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs text-white/35 leading-relaxed">
+                      <p className="font-semibold text-white/50 mb-1">Where to get credentials:</p>
+                      <p>Log in to your Pesapal merchant account → Go to <strong className="text-white/60">Settings → API Keys</strong>.
+                      Copy the Consumer Key and Consumer Secret and paste them above.
+                      Switch sandbox off when you are ready to accept live payments.</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Users */}
                 {viewTab === "users" && (
                   isLoadingUsers ? (

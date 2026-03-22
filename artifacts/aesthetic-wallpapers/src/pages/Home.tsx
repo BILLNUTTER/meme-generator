@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGetImages } from "@workspace/api-client-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Lightbox } from "@/components/Lightbox";
 import { AppInstallPrompt } from "@/components/AppInstallPrompt";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Lock } from "lucide-react";
+import {
+  MessageCircle, Lock, Download, Smile, Image as ImageIcon,
+  Video, Zap, ShieldCheck, Star, ArrowRight, Check, Link2,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -15,7 +17,6 @@ const CATEGORIES = ["All", "Nature", "Minimalism", "Cars", "Anime", "Vaporwave",
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All");
-  const [lightboxState, setLightboxState] = useState({ isOpen: false, index: 0 });
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -26,16 +27,14 @@ export default function Home() {
     return () => window.removeEventListener("auth-change", onAuth);
   }, []);
 
-  const { data: images = [], isLoading, error } = useGetImages(
+  const { data: images = [], isLoading } = useGetImages(
     activeCategory === "All" ? undefined : { category: activeCategory }
   );
 
-  const openLightbox = (index: number) => setLightboxState({ isOpen: true, index });
-  const closeLightbox = () => setLightboxState(prev => ({ ...prev, isOpen: false }));
-  const navigateLightbox = (index: number) => setLightboxState(prev => ({ ...prev, index }));
+  const samples = images.slice(0, 2);
 
   return (
-    <div className="min-h-screen flex flex-col pt-20">
+    <div className="min-h-screen flex flex-col pt-20 overflow-x-hidden">
       {/* Sticky Banner */}
       <div className="fixed top-20 left-0 right-0 z-30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent backdrop-blur-md border-b border-primary/10">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-4 text-sm font-medium">
@@ -50,9 +49,87 @@ export default function Home() {
 
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 mt-8">
-        {/* WhatsApp Strip */}
-        <div className="mb-12 max-w-2xl mx-auto">
+      {/* ── HERO ──────────────────────────────────────────────── */}
+      <section className="relative text-center max-w-5xl mx-auto px-4 sm:px-6 pt-16 pb-20">
+        <div className="absolute inset-0 -z-10 blur-[120px] opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 50% 0%, #7c3aed 0%, transparent 70%)" }} />
+
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 rounded-full mb-6">
+            Your aesthetic content hub
+          </span>
+          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/40 leading-tight mb-8">
+            Wallpapers · Memes<br />
+            <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+              &amp; TikToks
+            </span>
+          </h1>
+        </motion.div>
+
+        {/* Feature pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-wrap justify-center gap-3 mb-8"
+        >
+          {[
+            { icon: Video,     label: "TikTok videos — no watermark" },
+            { icon: Smile,     label: "Meme generator" },
+            { icon: ImageIcon, label: "Aesthetic wallpapers" },
+            { icon: Download,  label: "Free downloads after signup" },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/70">
+              <Icon className="w-3.5 h-3.5 text-violet-400" />
+              {label}
+            </div>
+          ))}
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-base md:text-lg text-white/55 max-w-2xl mx-auto mb-10 leading-relaxed"
+        >
+          One platform to browse premium aesthetic wallpapers, generate custom memes with your branding,
+          and download any TikTok video in full HD — completely watermark-free. Everything curated daily,
+          all in one place.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
+          {isLoggedIn ? (
+            <Link href="/dashboard">
+              <Button size="lg" className="h-12 px-8 rounded-full text-base font-semibold gap-2">
+                Go to Dashboard <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/register">
+                <Button size="lg" className="h-12 px-8 rounded-full text-base font-semibold gap-2">
+                  Start Free <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline" size="lg" className="h-12 px-8 rounded-full text-base border-white/15 hover:bg-white/5">
+                  Sign In
+                </Button>
+              </Link>
+            </>
+          )}
+        </motion.div>
+      </section>
+
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-24">
+
+        {/* ── WhatsApp strip ──────────────────────────────────── */}
+        <div className="mb-14 max-w-2xl mx-auto">
           <a
             href="https://whatsapp.com/channel/0029Vb6rOQtEAKW7qpF7w50d"
             target="_blank"
@@ -60,39 +137,18 @@ export default function Home() {
             className="flex items-center justify-center gap-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 py-3 px-6 rounded-2xl transition-colors duration-300 w-full font-medium"
           >
             <MessageCircle className="w-5 h-5" />
-            <span className="tracking-wide">📢 Follow us on WhatsApp for daily drops →</span>
+            <span>📢 Follow us on WhatsApp for daily drops →</span>
           </a>
         </div>
 
-        {/* Hero */}
-        <section className="text-center max-w-4xl mx-auto mb-16 space-y-6">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="font-display text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-white to-white/40"
-          >
-            Wallpapers, Memes &amp; TikToks
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg text-muted-foreground text-balance max-w-2xl mx-auto"
-          >
-            Your daily dose of aesthetic wallpapers, trending memes and viral TikTok videos — 
-            all curated in one place. Register free and download everything, no watermarks.
-          </motion.p>
-        </section>
-
-        {/* Category filter */}
+        {/* ── Category filter ─────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex flex-wrap justify-center gap-3 mb-12"
+          className="flex flex-wrap justify-center gap-3 mb-10"
         >
-          {CATEGORIES.map((cat) => (
+          {CATEGORIES.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -108,71 +164,183 @@ export default function Home() {
           ))}
         </motion.div>
 
-        {/* Gallery */}
-        {isLoading ? (
-          <div className="h-64 flex items-center justify-center">
+        {/* ── 2 Sample cards for active category ──────────────── */}
+        <div className="mb-20 min-h-[320px] flex items-center justify-center">
+          {isLoading ? (
             <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-20 text-destructive/80 glass-card rounded-2xl">
-            <p>Failed to load images. Please try again later.</p>
-          </div>
-        ) : images.length === 0 ? (
-          <div className="text-center py-32 border border-white/5 rounded-3xl bg-white/[0.02]">
-            <p className="font-display text-2xl text-white/40 italic">No visuals found.</p>
-          </div>
-        ) : (
-          <motion.div layout className="masonry-grid">
-            <AnimatePresence>
-              {images.map((img, idx) => (
-                <motion.div
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.5, delay: Math.min(idx * 0.05, 0.5) }}
-                  key={img.id}
-                  className="masonry-item relative group cursor-zoom-in rounded-xl overflow-hidden bg-white/5"
-                  onClick={() => openLightbox(idx)}
-                >
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
-                  <img
-                    src={img.url}
-                    alt={img.title || "Gallery image"}
-                    loading="lazy"
-                    className="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105"
-                  />
-                  {img.type === "meme" && (
-                    <div className="absolute top-2 left-2 z-20">
-                      <span className="text-xs bg-yellow-500/80 text-black font-bold px-2 py-0.5 rounded-full">😂 Meme</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 flex flex-col justify-end p-6">
-                    <h3 className="text-white font-display text-xl translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      {img.title || "Untitled"}
-                    </h3>
-                    <p className="text-white/60 text-xs uppercase tracking-widest mt-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">
-                      {img.category}
-                    </p>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeCategory}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -24 }}
+                transition={{ duration: 0.45, ease: "easeInOut" }}
+                className="w-full"
+              >
+                {samples.length === 0 ? (
+                  <div className="text-center py-20 text-white/30 border border-white/5 rounded-3xl bg-white/[0.02]">
+                    <p className="font-display text-xl italic">No samples yet for this category.</p>
                   </div>
-                </motion.div>
-              ))}
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {samples.map(img => (
+                      <div
+                        key={img.id}
+                        className="relative rounded-3xl overflow-hidden aspect-[4/3] bg-white/5 cursor-pointer group"
+                        onClick={() => setShowAuthDialog(true)}
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.title || "Sample"}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 flex flex-col justify-end p-6">
+                          <p className="text-white font-display text-xl mb-1">{img.title || "Untitled"}</p>
+                          <p className="text-white/50 text-xs uppercase tracking-widest">{img.category}</p>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="bg-black/60 backdrop-blur-sm border border-white/20 rounded-2xl px-5 py-3 flex items-center gap-2 text-sm font-medium text-white">
+                            <Lock className="w-4 h-4" /> Register to download free
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
             </AnimatePresence>
-          </motion.div>
-        )}
+          )}
+        </div>
+
+        {/* ── How to use ──────────────────────────────────────── */}
+        <section className="mb-24">
+          <div className="text-center mb-12">
+            <span className="text-xs uppercase tracking-widest text-violet-400 font-semibold">Simple steps</span>
+            <h2 className="font-display text-4xl mt-3 text-white">How it works</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                step: "01",
+                icon: Star,
+                title: "Create a free account",
+                desc: "Sign up in seconds — no credit card, no spam. Just your name, email and a password.",
+              },
+              {
+                step: "02",
+                icon: Download,
+                title: "Browse & download",
+                desc: "Explore wallpapers, memes and TikTok videos. One tap downloads anything directly to your device.",
+              },
+              {
+                step: "03",
+                icon: Link2,
+                title: "Paste any TikTok link",
+                desc: "Got a TikTok you love? Paste the link in the TikTok Link tool and download it watermark-free — 3 free per month, or upgrade for unlimited.",
+              },
+            ].map(({ step, icon: Icon, title, desc }) => (
+              <div key={step} className="relative rounded-2xl border border-white/8 bg-white/[0.03] p-8 group hover:border-violet-500/30 hover:bg-white/[0.05] transition-all duration-300">
+                <div className="text-5xl font-display text-white/5 absolute top-6 right-6">{step}</div>
+                <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-5">
+                  <Icon className="w-5 h-5 text-violet-400" />
+                </div>
+                <h3 className="font-display text-lg text-white mb-3">{title}</h3>
+                <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Why choose us ───────────────────────────────────── */}
+        <section className="mb-24">
+          <div className="text-center mb-12">
+            <span className="text-xs uppercase tracking-widest text-pink-400 font-semibold">Reasons to join</span>
+            <h2 className="font-display text-4xl mt-3 text-white">Why choose Aesthetic?</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              {
+                icon: Video,
+                title: "TikTok without watermarks",
+                desc: "Download any TikTok video in HD without the distracting TikTok watermark logo.",
+                color: "from-pink-500/20 to-rose-500/5",
+                border: "border-pink-500/20",
+                iconColor: "text-pink-400",
+              },
+              {
+                icon: Smile,
+                title: "Meme generator",
+                desc: "Type your text, our system generates a professional 1080×1080 meme image instantly — Impact font, black background, branded watermark.",
+                color: "from-yellow-500/20 to-orange-500/5",
+                border: "border-yellow-500/20",
+                iconColor: "text-yellow-400",
+              },
+              {
+                icon: ImageIcon,
+                title: "Aesthetic wallpapers",
+                desc: "Hand-picked wallpapers across Nature, Cars, Anime, Minimalism, Vaporwave and more — updated daily.",
+                color: "from-blue-500/20 to-cyan-500/5",
+                border: "border-blue-500/20",
+                iconColor: "text-blue-400",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Free & secure",
+                desc: "Everything is free to browse. Sign up to download. No ads, no trackers, no nonsense.",
+                color: "from-green-500/20 to-emerald-500/5",
+                border: "border-green-500/20",
+                iconColor: "text-green-400",
+              },
+            ].map(({ icon: Icon, title, desc, color, border, iconColor }) => (
+              <div key={title} className={cn("rounded-2xl border bg-gradient-to-br p-6 transition-transform duration-300 hover:-translate-y-1", color, border)}>
+                <Icon className={cn("w-8 h-8 mb-4", iconColor)} />
+                <h3 className="font-display text-white text-lg mb-2">{title}</h3>
+                <p className="text-white/50 text-xs leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Pricing teaser ──────────────────────────────────── */}
+        <section className="mb-24">
+          <div className="rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-pink-500/5 to-transparent p-10 text-center max-w-3xl mx-auto">
+            <Zap className="w-10 h-10 text-violet-400 mx-auto mb-5" />
+            <h2 className="font-display text-3xl text-white mb-4">Upgrade for unlimited TikTok downloads</h2>
+            <p className="text-white/55 text-sm leading-relaxed mb-8 max-w-lg mx-auto">
+              Free users get 3 no-watermark TikTok downloads per month. Upgrade to unlimited downloads
+              for just <span className="text-white font-bold">Ksh 70/month</span>. Contact us on WhatsApp to activate.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              {["3 free TikTok downloads/month", "Unlimited wallpaper downloads", "Free meme generator", "New content daily"].map(f => (
+                <div key={f} className="flex items-center gap-2 text-sm text-white/70">
+                  <Check className="w-3.5 h-3.5 text-green-400 shrink-0" /> {f}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {!isLoggedIn && (
+                <Link href="/register">
+                  <Button size="lg" className="rounded-full px-8">Start Free</Button>
+                </Link>
+              )}
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full px-8 border-green-500/30 text-green-400 hover:bg-green-500/10 gap-2"
+                onClick={() => window.open("https://whatsapp.com/channel/0029Vb6rOQtEAKW7qpF7w50d", "_blank")}
+              >
+                <MessageCircle className="w-4 h-4" /> Upgrade via WhatsApp
+              </Button>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <Footer />
       <AppInstallPrompt />
-
-      <Lightbox
-        images={images}
-        currentIndex={lightboxState.index}
-        isOpen={lightboxState.isOpen}
-        onClose={closeLightbox}
-        onNavigate={navigateLightbox}
-        onDownloadClick={() => setShowAuthDialog(true)}
-      />
 
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
         <DialogContent className="sm:max-w-md bg-black border-white/10 text-white">

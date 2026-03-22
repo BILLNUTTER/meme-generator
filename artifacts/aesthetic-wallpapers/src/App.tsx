@@ -10,6 +10,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import TikTokView from "@/pages/TikTokView";
+import PesapalPayment from "@/pages/PesapalPayment";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/tiktok" component={TikTokView} />
+      <Route path="/pay" component={PesapalPayment} />
       <Route component={NotFound} />
     </Switch>
   );

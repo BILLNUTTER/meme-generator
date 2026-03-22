@@ -34,5 +34,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: { createdAt: "createdAt", updatedAt: false } }
 );
 
-export const ImageModel = mongoose.model("Image", imageSchema);
-export const UserModel = mongoose.model("User", userSchema);
+const settingsSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true, unique: true },
+    value: { type: mongoose.Schema.Types.Mixed, default: null },
+  },
+  { timestamps: false }
+);
+
+export const ImageModel    = mongoose.model("Image",    imageSchema);
+export const UserModel     = mongoose.model("User",     userSchema);
+export const SettingsModel = mongoose.model("Settings", settingsSchema);
