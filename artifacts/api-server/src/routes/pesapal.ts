@@ -2,6 +2,9 @@ import { Router, type IRouter } from "express";
 import https from "https";
 import { SettingsModel, PaymentModel } from "../lib/mongodb";
 import { requireUserAuth } from "../middlewares/auth";
+import pino from "pino";
+
+const log = pino({ level: "info" });
 
 const router: IRouter = Router();
 
@@ -45,11 +48,11 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
     return;
   }
 
-  // Default to sandbox when not explicitly set to false; live endpoint (pay.pesapal.com) may
-  // have geo-restrictions — sandbox (cybqa.pesapal.com) is always reachable.
-  const useSandbox = isSandbox !== false;
+  const useSandbox = isSandbox === true;
+  // Live:    pay.pesapal.com      /v3/api/...
+  // Sandbox: cybqa.pesapal.com    /pesapalv3/api/...
   const hostname = useSandbox ? "cybqa.pesapal.com" : "pay.pesapal.com";
-  const base = "/pesapalv3/api";
+  const base = useSandbox ? "/pesapalv3/api" : "/v3/api";
 
   const { amount, currency = "KES", email, phone, description, merchantRef } = req.body as {
     amount: number;
@@ -66,12 +69,17 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
   }
 
   try {
+    log.info({ hostname, base, useSandbox }, "Pesapal: requesting token");
     const tokenRes = await pesapalPost(hostname, `${base}/Auth/RequestToken`, {
       consumer_key: consumerKey,
       consumer_secret: consumerSecret,
-    }) as { token?: string; error?: string; message?: string };
+    }) as { token?: string; error?: string; message?: string; status?: string };
+    log.info({ tokenRes }, "Pesapal: token response");
 
-    if (!tokenRes.token) throw new Error(tokenRes.message || "Failed to get Pesapal token");
+    if (!tokenRes.token) {
+      const msg = tokenRes.message || (tokenRes as Record<string,unknown>)["error"] as string || JSON.stringify(tokenRes);
+      throw new Error(`Pesapal token error: ${msg}`);
+    }
     const token = tokenRes.token;
 
     let ipnId: string;
@@ -89,6 +97,7 @@ router.post("/pesapal/initiate", requireUserAuth, async (req, res): Promise<void
 
     const ref = merchantRef || `AW-${Date.now()}`;
     const appUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:3000");
+    log.info({ ref, amount, currency, email }, "Pesapal: submitting order");
     const orderRes = await pesapalPost(hostname, `${base}/Transactions/SubmitOrderRequest`, {
       id: ref,
       currency,
