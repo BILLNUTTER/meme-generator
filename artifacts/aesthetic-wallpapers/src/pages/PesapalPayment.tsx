@@ -24,11 +24,6 @@ export default function PesapalPayment() {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [confirmResult, setConfirmResult] = useState<{ confirmationCode?: string; paymentMethod?: string } | null>(null);
 
-  // Direct URL from admin settings (bypasses token flow)
-  const [directUrl, setDirectUrl] = useState<string | null>(null);
-  const [urlLoading, setUrlLoading] = useState(true);
-
-  // Store tracking ID when payment initiated
   const orderTrackingIdRef = useRef<string>("");
 
   const AMOUNT = 70;
@@ -37,20 +32,11 @@ export default function PesapalPayment() {
     if (user?.email) setEmail(user.email);
   }, [user?.email]);
 
-  // Fetch direct payment URL on mount
-  useEffect(() => {
-    fetch(`${BASE_URL}/api/settings/payment-url`)
-      .then(r => r.json())
-      .then((d: { url?: string | null }) => { if (d.url) setDirectUrl(d.url); })
-      .catch(() => {})
-      .finally(() => setUrlLoading(false));
-  }, []);
-
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
-  // Listen for postMessage from the /pay/success page loaded inside the iframe
+  // Listen for postMessage from /pay/success loaded inside the iframe
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       if (event.data?.type !== "PESAPAL_SUCCESS") return;
@@ -88,18 +74,9 @@ export default function PesapalPayment() {
   const handlePay = async () => {
     if (!email.trim()) { setError("Please enter your email address."); return; }
     setError(null);
-
-    // Fast path: direct URL configured by admin
-    if (directUrl) {
-      setPayState("iframe");
-      setIframeUrl(directUrl);
-      return;
-    }
-
     setLoading(true);
     try {
       const token = localStorage.getItem("userToken");
-      // Pass callbackUrl so Pesapal redirects to OUR domain's /pay/success
       const callbackUrl = `${window.location.origin}${BASE_URL}/pay/success`;
       const res = await fetch(`${BASE_URL}/api/pesapal/initiate`, {
         method: "POST",
@@ -121,7 +98,7 @@ export default function PesapalPayment() {
         setPayState("iframe");
         setIframeUrl(data.redirectUrl);
       } else {
-        setError(data.error || "Could not initiate payment. Please try again.");
+        setError(data.error || "Could not open payment. Please try again.");
       }
     } catch {
       setError("Network error. Please check your connection.");
@@ -129,8 +106,6 @@ export default function PesapalPayment() {
       setLoading(false);
     }
   };
-
-  const isSettingsReady = isReady && !urlLoading;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -198,11 +173,12 @@ export default function PesapalPayment() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 
-          {/* ── SUCCESS STATE ── */}
+          {/* SUCCESS */}
           {payState === "success" && (
             <div className="text-center py-8">
               <motion.div
-                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="w-24 h-24 rounded-full bg-green-500/15 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6"
               >
                 <CheckCircle2 className="w-12 h-12 text-green-400" />
@@ -217,7 +193,6 @@ export default function PesapalPayment() {
               {confirmResult?.paymentMethod && (
                 <p className="text-white/30 text-xs mb-6">via {confirmResult.paymentMethod}</p>
               )}
-
               <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-6 mb-6 text-left space-y-3">
                 <div className="flex items-center gap-3">
                   <Crown className="w-5 h-5 text-yellow-400 shrink-0" />
@@ -228,7 +203,6 @@ export default function PesapalPayment() {
                   <p className="text-white text-sm font-medium">Valid for 30 days from today</p>
                 </div>
               </div>
-
               <Button
                 className="w-full bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-400 hover:to-pink-400 text-white rounded-xl py-3 font-semibold"
                 onClick={() => setLocation("/tiktok-download")}
@@ -238,7 +212,7 @@ export default function PesapalPayment() {
             </div>
           )}
 
-          {/* ── PAYMENT FORM ── */}
+          {/* FORM (and failed state) */}
           {(payState === "form" || payState === "failed") && (
             <>
               <div className="text-center mb-8">
@@ -247,18 +221,12 @@ export default function PesapalPayment() {
                 </div>
                 <h1 className="font-display text-3xl text-white mb-2">Upgrade Your Plan</h1>
                 <p className="text-white/50 text-sm">
-                  Unlimited no-watermark TikTok downloads for{" "}
+                  Unlimited TikTok downloads for{" "}
                   <span className="text-white font-bold">Ksh 70/month</span>
                 </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 space-y-5">
-                {!urlLoading && directUrl && (
-                  <div className="flex items-center gap-2 text-green-400 text-xs bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Payment gateway ready
-                  </div>
-                )}
-
                 <div>
                   <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
                     Email Address
@@ -270,7 +238,6 @@ export default function PesapalPayment() {
                     placeholder="your@email.com"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition"
                   />
-                  <p className="text-white/30 text-xs mt-2">You'll enter your M-Pesa number on the Pesapal screen</p>
                 </div>
 
                 <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-4">
@@ -299,14 +266,12 @@ export default function PesapalPayment() {
 
                 <Button
                   className="w-full bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-400 hover:to-pink-400 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-50"
-                  disabled={loading || !isSettingsReady || !email.trim()}
+                  disabled={loading || !email.trim()}
                   onClick={handlePay}
                 >
-                  {!isSettingsReady
-                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Loading…</>
-                    : loading
-                      ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Opening payment…</>
-                      : "Proceed to Pay — Ksh 70"}
+                  {loading
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Opening payment…</>
+                    : "Proceed to Pay — Ksh 70"}
                 </Button>
 
                 <p className="text-center text-white/25 text-xs">
@@ -315,6 +280,7 @@ export default function PesapalPayment() {
               </div>
             </>
           )}
+
         </motion.div>
       </main>
     </div>
