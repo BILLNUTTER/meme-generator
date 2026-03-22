@@ -650,24 +650,23 @@ function generateMemeImage(text: string): string {
   ctx.fillStyle = "#080808";
   ctx.fillRect(0, 0, size, size);
 
-  // ── Hidden tiled watermark "nutterx" ──────────────
-  // Very low opacity, small text, diagonal tile — invisible casually but embedded
+  // ── Hidden tiled watermark "nutterx" — white, 60° diagonal ──
   ctx.save();
-  ctx.globalAlpha = 0.045;
+  ctx.globalAlpha = 0.07;
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 22px Arial, sans-serif";
+  ctx.font = "bold 20px Arial, sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   const wm = "nutterx";
-  const wmW = 120;
-  const wmH = 90;
-  for (let row = -2; row < size / wmH + 2; row++) {
-    for (let col = -2; col < size / wmW + 2; col++) {
+  const wmW = 130;
+  const wmH = 85;
+  for (let row = -3; row < size / wmH + 3; row++) {
+    for (let col = -3; col < size / wmW + 3; col++) {
       const x = col * wmW + (row % 2 === 0 ? 0 : wmW / 2);
       const y = row * wmH;
       ctx.save();
       ctx.translate(x + wmW / 2, y + wmH / 2);
-      ctx.rotate(-Math.PI / 6);
+      ctx.rotate(-Math.PI / 3); // 60°
       ctx.fillText(wm, -wmW / 2, 0);
       ctx.restore();
     }
