@@ -7,8 +7,11 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ContentViewer } from "@/components/ContentViewer";
+import { AppInstallPrompt } from "@/components/AppInstallPrompt";
 import { useUserAuth } from "@/hooks/use-user-auth";
 import { useGetDashboardImages } from "@workspace/api-client-react";
+import type { Image } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -43,6 +46,8 @@ export function Dashboard() {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const [viewerItems, setViewerItems] = useState<Image[]>([]);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const [tkUrl, setTkUrl] = useState("");
   const [tkLoading, setTkLoading] = useState(false);
@@ -133,6 +138,18 @@ export function Dashboard() {
     <div className="min-h-screen flex flex-col pt-20 bg-background">
       <Header />
 
+      <AppInstallPrompt />
+
+      {viewerIndex !== null && viewerItems.length > 0 && (
+        <ContentViewer
+          items={viewerItems}
+          startIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+          baseUrl={baseUrl}
+          token={token}
+        />
+      )}
+
       {isDownloading && dlProgress > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl min-w-[220px]">
           <div className="w-32 h-1.5 rounded-full bg-white/10">
@@ -215,12 +232,11 @@ export function Dashboard() {
               {picks.map((img, i) => {
                 const typeLabel = img.type === "meme" ? "Meme" : img.type === "tiktok" ? "TikTok" : "Wallpaper";
                 const typeBadgeColor = img.type === "meme" ? "text-yellow-300" : img.type === "tiktok" ? "text-pink-300" : "text-blue-300";
-                const href = img.type === "meme" ? "/memes" : img.type === "tiktok" ? "/tiktoks" : "/wallpapers";
                 return (
                   <motion.div key={img.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-square bg-white/5"
-                    onClick={() => setLocation(href)}>
-                    <img src={img.url} alt={img.title ?? typeLabel} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-square bg-white/5 active:scale-95 transition-transform"
+                    onClick={() => { setViewerItems(picks); setViewerIndex(i); }}>
+                    <img src={img.thumbnail ?? img.url} alt={img.title ?? typeLabel} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
                       <p className="text-white font-medium text-xs truncate">{img.title ?? img.category}</p>
                     </div>

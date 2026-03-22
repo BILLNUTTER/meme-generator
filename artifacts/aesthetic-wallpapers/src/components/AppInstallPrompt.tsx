@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = "aw-install-dismissed-until";
-const REDISPLAY_MS = 7 * 24 * 60 * 60 * 1000;
+const REDISPLAY_MS = 2 * 24 * 60 * 60 * 1000;
 
 export function AppInstallPrompt() {
   const [show, setShow] = useState(false);

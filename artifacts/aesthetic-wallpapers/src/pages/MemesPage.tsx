@@ -1,23 +1,25 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
-import { ArrowLeft, Download, Laugh } from "lucide-react";
+import { ArrowLeft, Laugh } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ContentViewer } from "@/components/ContentViewer";
 import { useUserAuth } from "@/hooks/use-user-auth";
 import { useGetDashboardImages } from "@workspace/api-client-react";
-import { buildProxyUrl, downloadWithProgress } from "@/lib/utils";
 
 export function MemesPage() {
   const [, setLocation] = useLocation();
   const { isReady, isAuthenticated } = useUserAuth();
-  const [dlProgress, setDlProgress] = useState<{ name: string; percent: number } | null>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
+  const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
   const token = localStorage.getItem("userToken");
+
   const { data } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
     query: { enabled: isAuthenticated && !!token, staleTime: 5 * 60 * 1000 },
@@ -31,13 +33,14 @@ export function MemesPage() {
     <div className="min-h-screen flex flex-col pt-20 bg-background">
       <Header />
 
-      {dlProgress && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl">
-          <div className="w-32 h-1.5 rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-yellow-400 transition-all duration-300" style={{ width: `${dlProgress.percent}%` }} />
-          </div>
-          <span className="text-xs text-white/60">{dlProgress.percent}%</span>
-        </div>
+      {viewerIndex !== null && (
+        <ContentViewer
+          items={memes}
+          startIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+          baseUrl={baseUrl}
+          token={token}
+        />
       )}
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -55,7 +58,7 @@ export function MemesPage() {
             </div>
             <h1 className="font-display text-4xl sm:text-5xl text-white">Meme Gallery</h1>
           </div>
-          <p className="text-white/40 ml-[52px]">{memes.length} memes · curated & updated daily</p>
+          <p className="text-white/40 ml-[52px]">{memes.length} memes · tap to view full size</p>
         </div>
 
         {memes.length === 0 ? (
@@ -64,39 +67,22 @@ export function MemesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
-            {memes.map((img) => (
+            {memes.map((img, i) => (
               <motion.div
                 key={img.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="rounded-xl overflow-hidden group relative cursor-pointer bg-white/5 aspect-square"
+                className="rounded-xl overflow-hidden group relative cursor-pointer bg-white/5 aspect-square active:scale-95 transition-transform"
+                onClick={() => setViewerIndex(i)}
               >
                 <img
                   src={img.url}
                   alt={img.title ?? "Meme"}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-white text-xs font-medium truncate flex-1 mr-2">
-                      {img.title ?? "Meme"}
-                    </span>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        await downloadWithProgress(
-                          buildProxyUrl(img.url, `meme-${img.id}.jpg`, import.meta.env.BASE_URL.replace(/\/$/, "")),
-                          `meme-${img.id}.jpg`,
-                          (p) => setDlProgress({ name: "meme", percent: p })
-                        );
-                        setDlProgress(null);
-                      }}
-                      className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors shrink-0"
-                    >
-                      <Download className="w-3.5 h-3.5 text-white" />
-                    </button>
-                  </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                  <span className="text-white text-xs font-medium truncate">{img.title ?? "Meme"}</span>
                 </div>
               </motion.div>
             ))}
