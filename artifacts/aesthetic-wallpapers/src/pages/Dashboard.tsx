@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import {
   ImageIcon, Music, Download, Laugh, Wand2, ChevronLeft, ChevronRight,
   Link2, Loader2, AlertCircle, Zap, Sparkles, Crown, LogOut, MessageCircle,
+  CheckCircle2, CalendarDays,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 10;
 function getQuota() {
   const now = new Date();
   const month = `${now.getFullYear()}-${now.getMonth()}`;
@@ -30,6 +31,9 @@ function incrementQuota() {
   const q = getQuota(); q.count += 1;
   localStorage.setItem("tiktok-dl-quota", JSON.stringify(q));
   return q;
+}
+function fmtExpiry(iso: string) {
+  return new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 }
 
 const SERVICES = [
@@ -57,11 +61,29 @@ export function Dashboard() {
   const [dlProgress, setDlProgress] = useState<number>(0);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Subscription state from server
+  const [tiktokActive, setTiktokActive] = useState(false);
+  const [tiktokExpiry, setTiktokExpiry] = useState<string | null>(null);
+  const [subLoading, setSubLoading] = useState(true);
+
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
   const token = localStorage.getItem("userToken");
+
+  // Fetch subscription status once authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+    fetch(`${baseUrl}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((d: { tiktokActive?: boolean; tiktokExpiry?: string | null }) => {
+        setTiktokActive(!!d.tiktokActive);
+        setTiktokExpiry(d.tiktokExpiry ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setSubLoading(false));
+  }, [isAuthenticated, token, baseUrl]);
 
   const { data, isLoading: picksLoading } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
@@ -75,8 +97,8 @@ export function Dashboard() {
   // Latest 4 picks — API returns newest first
   const picks = allImages.slice(0, 4);
 
-  const remaining = FREE_LIMIT - quota.count;
-  const exhausted = remaining <= 0;
+  const remaining = Math.max(0, FREE_LIMIT - quota.count);
+  const exhausted = !tiktokActive && remaining <= 0;
 
   const scrollTo = (idx: number) => {
     const clamped = Math.max(0, Math.min(SERVICES.length - 1, idx));
@@ -178,6 +200,59 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* ── SUBSCRIPTION STATUS CARD ── */}
+        {!subLoading && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+            {tiktokActive ? (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-4 rounded-2xl border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-violet-500/10 px-5 py-4">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5 text-yellow-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white">Premium Active</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <CalendarDays className="w-3 h-3 text-white/35" />
+                    <p className="text-xs text-white/40">
+                      Expires {tiktokExpiry ? fmtExpiry(tiktokExpiry) : "—"} · Unlimited TikTok downloads
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-yellow-500/15 border border-yellow-500/20">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-yellow-400" />
+                  <span className="text-xs font-semibold text-yellow-300">Unlimited</span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                  <Download className="w-5 h-5 text-white/40" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">Free Plan</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-1 h-1.5 rounded-full bg-white/10 max-w-[120px]">
+                      <div
+                        className={cn("h-full rounded-full transition-all", remaining === 0 ? "bg-red-500" : remaining <= 3 ? "bg-orange-400" : "bg-green-500")}
+                        style={{ width: `${Math.min(100, (quota.count / FREE_LIMIT) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-white/40">
+                      {quota.count}/{FREE_LIMIT} TikTok downloads used this month
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm"
+                  className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-white text-xs font-semibold"
+                  onClick={() => setLocation("/pay")}>
+                  Upgrade Ksh 70
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        )}
+
         {/* ── SLIDABLE HERO ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
           <div className="flex items-center justify-between mb-4">
@@ -275,11 +350,22 @@ export function Dashboard() {
               </button>
             </div>
 
-            {exhausted ? (
+            {tiktokActive ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 mb-6">
+                <Crown className="w-4 h-4 text-yellow-400 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-white">Premium — Unlimited downloads</p>
+                  <p className="text-xs text-white/40">
+                    {tiktokExpiry ? `Expires ${fmtExpiry(tiktokExpiry)}` : "Active subscription"}
+                  </p>
+                </div>
+                <span className="text-xs font-semibold text-yellow-300 px-2 py-1 rounded-lg bg-yellow-500/15">∞</span>
+              </div>
+            ) : exhausted ? (
               <div className="flex items-center gap-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 mb-6">
                 <Crown className="w-5 h-5 text-red-400 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">Monthly limit reached — 3/3 used</p>
+                  <p className="text-sm font-semibold text-white">Monthly limit reached — {FREE_LIMIT}/{FREE_LIMIT} used</p>
                   <p className="text-xs text-white/40">Upgrade for unlimited downloads · Resets next month</p>
                 </div>
                 <Button size="sm" className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-xs" onClick={() => setLocation("/pay")}>

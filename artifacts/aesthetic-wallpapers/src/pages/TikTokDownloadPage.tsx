@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
-import { ArrowLeft, Download, Link2, Loader2, AlertCircle, CheckCircle2, Zap, Crown } from "lucide-react";
+import { ArrowLeft, Download, Link2, Loader2, AlertCircle, CheckCircle2, Zap, Crown, CalendarDays } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useUserAuth } from "@/hooks/use-user-auth";
@@ -31,6 +31,10 @@ function incrementQuota() {
   return q;
 }
 
+function fmtExpiry(iso: string) {
+  return new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+}
+
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function TikTokDownloadPage() {
@@ -44,12 +48,30 @@ export function TikTokDownloadPage() {
   const [dlProgress, setDlProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // Subscription state from server
+  const [tiktokActive, setTiktokActive] = useState(false);
+  const [tiktokExpiry, setTiktokExpiry] = useState<string | null>(null);
+  const [subLoading, setSubLoading] = useState(true);
+
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
-  const remaining = FREE_LIMIT - quota.count;
-  const exhausted = remaining <= 0;
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const token = localStorage.getItem("userToken");
+    fetch(`${BASE_URL}/api/users/me`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.json())
+      .then((d: { tiktokActive?: boolean; tiktokExpiry?: string | null }) => {
+        setTiktokActive(!!d.tiktokActive);
+        setTiktokExpiry(d.tiktokExpiry ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setSubLoading(false));
+  }, [isAuthenticated]);
+
+  const remaining = Math.max(0, FREE_LIMIT - quota.count);
+  const exhausted = !tiktokActive && remaining <= 0;
 
   const handleFetch = async () => {
     if (!url.trim()) return;
@@ -141,42 +163,65 @@ export function TikTokDownloadPage() {
           </p>
         </div>
 
-        {/* Quota badge */}
-        <div className={`flex items-center gap-3 rounded-2xl p-4 mb-8 border ${
-          exhausted
-            ? "bg-red-500/5 border-red-500/20"
-            : remaining === 1
-            ? "bg-orange-500/5 border-orange-500/20"
-            : "bg-white/[0.03] border-white/10"
-        }`}>
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-            exhausted ? "bg-red-500/20" : "bg-white/5"
-          }`}>
-            {exhausted ? <Crown className="w-4 h-4 text-red-400" /> : <CheckCircle2 className="w-4 h-4 text-green-400" />}
-          </div>
-          <div className="flex-1">
-            {exhausted ? (
-              <>
-                <p className="text-sm font-semibold text-white">Monthly limit reached</p>
-                <p className="text-xs text-white/40">Upgrade to Ksh 70/month for unlimited downloads</p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-white">{remaining} free {remaining === 1 ? "download" : "downloads"} remaining</p>
-                <p className="text-xs text-white/40">Resets next month · Upgrade for unlimited</p>
-              </>
-            )}
-          </div>
-          {exhausted && (
-            <Button
-              size="sm"
-              className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-white text-xs"
-              onClick={() => setLocation("/pay")}
-            >
-              Upgrade Ksh 70
-            </Button>
-          )}
-        </div>
+        {/* Quota / subscription badge */}
+        {!subLoading && (
+          tiktokActive ? (
+            <div className="flex items-center gap-3 rounded-2xl p-4 mb-8 border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-violet-500/10">
+              <div className="w-8 h-8 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
+                <Crown className="w-4 h-4 text-yellow-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Premium — Unlimited downloads</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <CalendarDays className="w-3 h-3 text-white/35" />
+                  <p className="text-xs text-white/40">
+                    {tiktokExpiry ? `Expires ${fmtExpiry(tiktokExpiry)}` : "Active subscription"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-yellow-500/15 border border-yellow-500/20">
+                <CheckCircle2 className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="text-xs font-semibold text-yellow-300">Unlimited</span>
+              </div>
+            </div>
+          ) : (
+            <div className={`flex items-center gap-3 rounded-2xl p-4 mb-8 border ${
+              exhausted
+                ? "bg-red-500/5 border-red-500/20"
+                : remaining <= 3
+                ? "bg-orange-500/5 border-orange-500/20"
+                : "bg-white/[0.03] border-white/10"
+            }`}>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                exhausted ? "bg-red-500/20" : "bg-white/5"
+              }`}>
+                {exhausted ? <Crown className="w-4 h-4 text-red-400" /> : <CheckCircle2 className="w-4 h-4 text-green-400" />}
+              </div>
+              <div className="flex-1">
+                {exhausted ? (
+                  <>
+                    <p className="text-sm font-semibold text-white">Monthly limit reached — {FREE_LIMIT}/{FREE_LIMIT} used</p>
+                    <p className="text-xs text-white/40">Upgrade to Ksh 70/month for unlimited downloads</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-white">{remaining} free {remaining === 1 ? "download" : "downloads"} remaining</p>
+                    <p className="text-xs text-white/40">{quota.count}/{FREE_LIMIT} used · Resets next month · Upgrade for unlimited</p>
+                  </>
+                )}
+              </div>
+              {exhausted && (
+                <Button
+                  size="sm"
+                  className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-white text-xs"
+                  onClick={() => setLocation("/pay")}
+                >
+                  Upgrade Ksh 70
+                </Button>
+              )}
+            </div>
+          )
+        )}
 
         {/* Input */}
         <div className="glass-card rounded-2xl p-6 mb-6">
