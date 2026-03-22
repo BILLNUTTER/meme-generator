@@ -56,7 +56,7 @@ export default function Admin() {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const [destination, setDestination] = useState("landing");
+  const [destination, setDestination] = useState("dashboard");
   const [pinterestInput, setPinterestInput] = useState("");
   const [isResolvingPinterest, setIsResolvingPinterest] = useState(false);
   const [memeText, setMemeText] = useState("");
@@ -183,7 +183,7 @@ export default function Admin() {
   });
 
   const resetForm = () => {
-    setUrl(""); setTitle(""); setCategory(CATEGORIES[0]); setDestination("landing");
+    setUrl(""); setTitle(""); setCategory(CATEGORIES[0]); setDestination("dashboard");
     setPinterestInput(""); setMemeText("");
     setTiktokUrl(""); setTiktokThumbnail(""); setTiktokTitle("");
   };
