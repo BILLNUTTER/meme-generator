@@ -8,7 +8,7 @@ import { Lightbox } from "@/components/Lightbox";
 import { DownloadProgressBar, type DownloadItem } from "@/components/DownloadProgressBar";
 import { useUserAuth } from "@/hooks/use-user-auth";
 import { cn, downloadWithProgress, buildProxyUrl } from "@/lib/utils";
-import { LogOut, Download, MessageCircle, Image as ImageIcon, Laugh, Music, Play } from "lucide-react";
+import { LogOut, Download, MessageCircle, Image as ImageIcon, Laugh, Music, Play, Link2, Sparkles, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const CATEGORIES = ["All", "Nature", "Minimalism", "Cars", "Anime", "Vaporwave", "Memes"];
@@ -18,9 +18,36 @@ const TYPE_TABS = [
   { id: "wallpaper", label: "Wallpapers", icon: ImageIcon },
   { id: "meme",      label: "Memes",      icon: Laugh },
   { id: "tiktok",    label: "TikToks",    icon: Music },
+  { id: "download",  label: "TikTok Link", icon: Link2 },
 ] as const;
 
 type TabId = (typeof TYPE_TABS)[number]["id"];
+
+// ── TikTok quota helpers (localStorage, resets monthly) ──────────────
+const FREE_LIMIT = 3;
+const QUOTA_KEY  = "tiktok-dl-quota";
+
+function getQuota(): { count: number; month: string } {
+  try {
+    const raw = localStorage.getItem(QUOTA_KEY);
+    if (!raw) return { count: 0, month: "" };
+    return JSON.parse(raw) as { count: number; month: string };
+  } catch { return { count: 0, month: "" }; }
+}
+
+function getRemainingFree(): number {
+  const month  = new Date().toISOString().slice(0, 7);
+  const stored = getQuota();
+  if (stored.month !== month) return FREE_LIMIT;
+  return Math.max(0, FREE_LIMIT - stored.count);
+}
+
+function incrementQuota(): void {
+  const month  = new Date().toISOString().slice(0, 7);
+  const stored = getQuota();
+  const count  = stored.month === month ? stored.count + 1 : 1;
+  localStorage.setItem(QUOTA_KEY, JSON.stringify({ count, month }));
+}
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -30,6 +57,13 @@ export default function Dashboard() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxState, setLightboxState]   = useState({ isOpen: false, index: 0 });
   const [downloads, setDownloads]           = useState<DownloadItem[]>([]);
+
+  // TikTok link downloader state
+  const [tikUrl, setTikUrl]         = useState("");
+  const [tikLoading, setTikLoading] = useState(false);
+  const [tikError, setTikError]     = useState<string | null>(null);
+  const [tikDone, setTikDone]       = useState(false);
+  const [remaining, setRemaining]   = useState(() => getRemainingFree());
 
   const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -89,6 +123,41 @@ export default function Dashboard() {
 
   const dismissDownload = (id: string) => setDownloads(prev => prev.filter(d => d.id !== id));
 
+  const handleTikDownload = async () => {
+    if (!tikUrl.trim()) return;
+    setTikLoading(true);
+    setTikError(null);
+    setTikDone(false);
+    try {
+      const res = await fetch(`${BASE_URL}/api/images/tiktok-info`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: tikUrl.trim() }),
+      });
+      const data = await res.json() as { downloadUrl?: string; title?: string; error?: string };
+      if (!data.downloadUrl) throw new Error(data.error || "Could not fetch video.");
+
+      const filename = (data.title || "tiktok-video").replace(/[^a-z0-9\-_ ]/gi, "_").slice(0, 60) + ".mp4";
+      const proxyUrl = buildProxyUrl(data.downloadUrl, filename, BASE_URL);
+      const id = `dl-tik-${Date.now()}`;
+      setDownloads(prev => [...prev, { id, filename, progress: 0, done: false }]);
+      incrementQuota();
+      const newRemaining = getRemainingFree();
+      setRemaining(newRemaining);
+      await downloadWithProgress(proxyUrl, filename, (progress) => {
+        setDownloads(prev => prev.map(d => d.id === id ? { ...d, progress: progress === -1 ? -1 : Math.min(progress, 99) } : d));
+      });
+      setDownloads(prev => prev.map(d => d.id === id ? { ...d, progress: 100, done: true } : d));
+      setTimeout(() => setDownloads(prev => prev.filter(d => d.id !== id)), 4000);
+      setTikDone(true);
+      setTikUrl("");
+    } catch (e) {
+      setTikError(e instanceof Error ? e.message : "Download failed.");
+    } finally {
+      setTikLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col pt-20 bg-background">
       <Header />
@@ -133,16 +202,21 @@ export default function Dashboard() {
             return (
               <button
                 key={tab.id}
-                onClick={() => { setActiveType(tab.id); setActiveCategory("All"); }}
+                onClick={() => { setActiveType(tab.id); setActiveCategory("All"); setTikError(null); setTikDone(false); }}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
                   activeType === tab.id
-                    ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+                    ? tab.id === "download"
+                      ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+                      : "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.25)]"
                     : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/5"
                 )}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
+                {tab.id === "download" && (
+                  <span className="ml-1 text-[10px] bg-pink-500/30 text-pink-300 px-1.5 py-0.5 rounded-full font-semibold">NEW</span>
+                )}
               </button>
             );
           })}
@@ -172,7 +246,106 @@ export default function Dashboard() {
           </motion.div>
         )}
 
-        {isLoading ? (
+        {/* ── TikTok Link Downloader ─────────────────────────────── */}
+        {activeType === "download" && (
+          <motion.div
+            key="downloader"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-xl mx-auto"
+          >
+            {/* Header card */}
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 mb-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-600 flex items-center justify-center mx-auto mb-5">
+                <Link2 className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="font-display text-2xl mb-2">TikTok No-Watermark Download</h2>
+              <p className="text-white/50 text-sm leading-relaxed mb-5">
+                Paste any TikTok link below and download the clean video — no watermark, no logo.
+              </p>
+
+              {/* Quota badge */}
+              <div className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-1",
+                remaining > 0
+                  ? "bg-green-500/10 border border-green-500/20 text-green-400"
+                  : "bg-red-500/10 border border-red-500/20 text-red-400"
+              )}>
+                <Sparkles className="w-3.5 h-3.5" />
+                {remaining > 0
+                  ? `${remaining} free download${remaining !== 1 ? "s" : ""} remaining this month`
+                  : "Free quota used — upgrade for more"}
+              </div>
+              <p className="text-white/30 text-xs mt-1.5">Resets on the 1st of each month</p>
+            </div>
+
+            {/* Upgrade banner when quota is 0 */}
+            {remaining === 0 && (
+              <div className="rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-5 mb-6 flex items-start gap-4">
+                <AlertCircle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-yellow-300 font-semibold text-sm mb-1">Monthly free quota reached</p>
+                  <p className="text-white/50 text-xs leading-relaxed">
+                    Upgrade for unlimited no-watermark TikTok downloads for just <span className="text-white font-semibold">Ksh 70/month</span>.
+                    Contact us on WhatsApp to activate your plan.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="mt-3 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/30 text-xs"
+                    onClick={() => window.open("https://whatsapp.com/channel/0029Vb6rOQtEAKW7qpF7w50d", "_blank")}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Upgrade via WhatsApp
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Input + button */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2">TikTok URL</label>
+                <input
+                  type="url"
+                  value={tikUrl}
+                  onChange={e => { setTikUrl(e.target.value); setTikError(null); setTikDone(false); }}
+                  placeholder="https://www.tiktok.com/@user/video/..."
+                  disabled={tikLoading || remaining === 0}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition disabled:opacity-40"
+                />
+              </div>
+
+              {tikError && (
+                <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 shrink-0" /> {tikError}
+                </div>
+              )}
+
+              {tikDone && (
+                <div className="flex items-center gap-2 text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" /> Download started — check your downloads folder!
+                </div>
+              )}
+
+              <Button
+                className="w-full bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-400 hover:to-violet-500 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!tikUrl.trim() || tikLoading || remaining === 0}
+                onClick={handleTikDownload}
+              >
+                {tikLoading
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Fetching video…</>
+                  : <><Download className="w-4 h-4 mr-2" /> Download Without Watermark</>
+                }
+              </Button>
+
+              <p className="text-center text-white/25 text-xs">
+                Works with any public TikTok video link · HD quality
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Gallery (hidden when TikTok downloader is active) ─── */}
+        {activeType !== "download" && (isLoading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
           </div>
@@ -298,7 +471,7 @@ export default function Dashboard() {
               </section>
             )}
           </>
-        )}
+        ))}
       </main>
 
       <Footer />

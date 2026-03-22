@@ -446,7 +446,7 @@ export default function Admin() {
                     {memeText.trim() && (
                       <div className="rounded-xl overflow-hidden aspect-square bg-black border border-white/10 flex items-center justify-center p-4">
                         <p
-                          className="text-white text-center font-black leading-tight break-words"
+                          className="text-white text-center leading-tight break-words"
                           style={{
                             fontSize: memeText.length > 120 ? "11px" : memeText.length > 70 ? "14px" : memeText.length > 35 ? "18px" : "24px",
                             fontFamily: "Impact, Arial Black, sans-serif",
@@ -650,15 +650,15 @@ function generateMemeImage(text: string): string {
   ctx.fillStyle = "#080808";
   ctx.fillRect(0, 0, size, size);
 
-  // ── Hidden tiled watermark "nutterx" — white, 60° diagonal ──
+  // ── Hidden tiled watermark — white, 60° diagonal ──
   ctx.save();
   ctx.globalAlpha = 0.07;
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 20px Arial, sans-serif";
+  ctx.font = "18px Arial, sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  const wm = "nutterx";
-  const wmW = 130;
+  const wm = "Nutterx Technologies";
+  const wmW = 200;
   const wmH = 85;
   for (let row = -3; row < size / wmH + 3; row++) {
     for (let col = -3; col < size / wmW + 3; col++) {
@@ -678,7 +678,7 @@ function generateMemeImage(text: string): string {
   // Auto-scale font based on length
   let fontSize = text.length > 140 ? 56 : text.length > 80 ? 70 : text.length > 40 ? 88 : text.length > 20 ? 108 : 130;
 
-  ctx.font = `900 ${fontSize}px Impact, "Arial Black", sans-serif`;
+  ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
