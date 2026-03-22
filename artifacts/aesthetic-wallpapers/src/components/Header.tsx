@@ -1,5 +1,4 @@
 import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
 import { Camera } from "lucide-react";
 
 export function Header() {
@@ -16,25 +15,13 @@ export function Header() {
             Aesthetic
           </span>
         </Link>
-        
+
         <nav className="flex items-center gap-6">
-          <Link 
-            href="/" 
-            className={cn(
-              "text-sm font-medium transition-colors duration-200",
-              location === "/" ? "text-white" : "text-muted-foreground hover:text-white"
-            )}
+          <Link
+            href="/"
+            className="text-sm font-medium transition-colors duration-200 text-muted-foreground hover:text-white"
           >
             Gallery
-          </Link>
-          <Link 
-            href="/admin" 
-            className={cn(
-              "text-sm font-medium transition-colors duration-200",
-              location === "/admin" ? "text-white" : "text-muted-foreground hover:text-white"
-            )}
-          >
-            Admin
           </Link>
         </nav>
       </div>

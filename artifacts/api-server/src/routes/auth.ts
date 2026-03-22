@@ -4,8 +4,8 @@ import { generateToken } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_USERNAME = "42819408";
+const ADMIN_PASSWORD = "BILLnutter001002";
 
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = AdminLoginBody.safeParse(req.body);

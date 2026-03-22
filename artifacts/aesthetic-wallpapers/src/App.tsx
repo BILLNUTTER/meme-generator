@@ -1,4 +1,5 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useSearch } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,11 +17,19 @@ const queryClient = new QueryClient({
   },
 });
 
+function AdminGate() {
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  if (params.get("admin") === "true") {
+    return <Admin />;
+  }
+  return <Home />;
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/admin" component={Admin} />
+      <Route path="/" component={AdminGate} />
       <Route component={NotFound} />
     </Switch>
   );
