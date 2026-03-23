@@ -65,7 +65,7 @@ export default function Home() {
           <span className="inline-block text-xs font-semibold uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 px-4 py-1.5 rounded-full mb-6">
             Your aesthetic content hub
           </span>
-          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/40 leading-tight mb-8">
+          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-800 to-gray-600 leading-tight mb-8">
             Wallpapers · Memes<br />
             <span className="bg-gradient-to-r from-orange-400 via-green-400 to-blue-400 bg-clip-text text-transparent">
               &amp; TikToks
@@ -162,8 +162,8 @@ export default function Home() {
               className={cn(
                 "px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
                 activeCategory === cat
-                  ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-                  : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/5"
+                  ? "bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.35)]"
+                  : "bg-black/5 text-gray-600 hover:bg-orange-50 hover:text-orange-600 border border-black/8"
               )}
             >
               {cat}

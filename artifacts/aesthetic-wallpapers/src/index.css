@@ -5,33 +5,34 @@
   --font-sans: 'Inter', sans-serif;
   --font-display: 'Playfair Display', serif;
 
-  --color-background: hsl(0 0% 4%);
-  --color-foreground: hsl(0 0% 98%);
-  
-  --color-card: hsl(0 0% 7%);
-  --color-card-foreground: hsl(0 0% 98%);
-  
-  --color-popover: hsl(0 0% 5%);
-  --color-popover-foreground: hsl(0 0% 98%);
-  
-  --color-primary: hsl(0 0% 98%);
-  --color-primary-foreground: hsl(0 0% 4%);
-  
-  --color-secondary: hsl(0 0% 12%);
-  --color-secondary-foreground: hsl(0 0% 98%);
-  
-  --color-muted: hsl(0 0% 15%);
-  --color-muted-foreground: hsl(0 0% 65%);
-  
-  --color-accent: hsl(0 0% 15%);
-  --color-accent-foreground: hsl(0 0% 98%);
-  
-  --color-destructive: hsl(0 62.8% 30.6%);
+  /* ── White / Orange default theme ── */
+  --color-background: hsl(30 30% 97%);
+  --color-foreground: hsl(220 15% 10%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(220 15% 10%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(220 15% 10%);
+
+  --color-primary: hsl(25 95% 53%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  --color-secondary: hsl(30 15% 92%);
+  --color-secondary-foreground: hsl(220 15% 10%);
+
+  --color-muted: hsl(30 10% 92%);
+  --color-muted-foreground: hsl(220 10% 45%);
+
+  --color-accent: hsl(30 15% 90%);
+  --color-accent-foreground: hsl(220 15% 10%);
+
+  --color-destructive: hsl(0 72% 51%);
   --color-destructive-foreground: hsl(0 0% 98%);
-  
-  --color-border: hsl(0 0% 15%);
-  --color-input: hsl(0 0% 15%);
-  --color-ring: hsl(0 0% 83.1%);
+
+  --color-border: hsl(30 15% 86%);
+  --color-input: hsl(30 15% 90%);
+  --color-ring: hsl(25 95% 53%);
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
@@ -41,48 +42,118 @@
 }
 
 :root {
-  color-scheme: dark;
-  --glass-border: rgba(255,255,255,0.06);
-  --glass-bg: rgba(10,10,10,0.55);
-  --glass-card-bg: rgba(255,255,255,0.04);
-  --glass-card-border: rgba(255,255,255,0.09);
+  color-scheme: light;
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-card-bg: rgba(255, 255, 255, 0.92);
+  --glass-card-border: rgba(0, 0, 0, 0.07);
+  /* dark text equivalents for legacy white text */
+  --lt: hsl(220 15% 10%);
+  --lt-90: rgba(14, 18, 28, 0.9);
+  --lt-80: rgba(14, 18, 28, 0.8);
+  --lt-70: rgba(14, 18, 28, 0.7);
+  --lt-65: rgba(14, 18, 28, 0.65);
+  --lt-60: rgba(14, 18, 28, 0.6);
+  --lt-55: rgba(14, 18, 28, 0.55);
+  --lt-50: rgba(14, 18, 28, 0.5);
+  --lt-45: rgba(14, 18, 28, 0.45);
+  --lt-40: rgba(14, 18, 28, 0.4);
+  --lt-35: rgba(14, 18, 28, 0.35);
+  --lt-30: rgba(14, 18, 28, 0.3);
+  --lt-25: rgba(14, 18, 28, 0.25);
+  --lt-20: rgba(14, 18, 28, 0.2);
+  --lt-15: rgba(14, 18, 28, 0.15);
+  --lt-10: rgba(14, 18, 28, 0.1);
+  --lt-05: rgba(14, 18, 28, 0.05);
 }
 
-/* ── Light theme: warm charcoal — all white text stays visible ── */
-html.light {
+/* ── Dark mode toggle ─────────────────────────────────────────────── */
+html.dark {
   color-scheme: dark;
-  --color-background: hsl(220 18% 11%);
+  --color-background: hsl(0 0% 4%);
   --color-foreground: hsl(0 0% 98%);
-  --color-card: hsl(220 18% 15%);
+  --color-card: hsl(0 0% 7%);
   --color-card-foreground: hsl(0 0% 98%);
-  --color-popover: hsl(220 18% 13%);
+  --color-popover: hsl(0 0% 5%);
   --color-popover-foreground: hsl(0 0% 98%);
-  --color-primary: hsl(0 0% 98%);
-  --color-primary-foreground: hsl(220 18% 11%);
-  --color-secondary: hsl(220 18% 20%);
+  --color-primary: hsl(25 95% 53%);
+  --color-primary-foreground: hsl(0 0% 98%);
+  --color-secondary: hsl(0 0% 12%);
   --color-secondary-foreground: hsl(0 0% 98%);
-  --color-muted: hsl(220 18% 22%);
-  --color-muted-foreground: hsl(220 10% 65%);
-  --color-accent: hsl(220 18% 20%);
+  --color-muted: hsl(0 0% 15%);
+  --color-muted-foreground: hsl(0 0% 65%);
+  --color-accent: hsl(0 0% 15%);
   --color-accent-foreground: hsl(0 0% 98%);
-  --color-border: hsl(220 18% 24%);
-  --color-input: hsl(220 18% 20%);
-  --glass-border: rgba(100,120,200,0.12);
-  --glass-bg: rgba(20,28,48,0.72);
-  --glass-card-bg: rgba(255,255,255,0.05);
-  --glass-card-border: rgba(100,120,200,0.14);
+  --color-border: hsl(0 0% 15%);
+  --color-input: hsl(0 0% 15%);
+  --color-ring: hsl(25 95% 53%);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-bg: rgba(10, 10, 10, 0.55);
+  --glass-card-bg: rgba(255, 255, 255, 0.04);
+  --glass-card-border: rgba(255, 255, 255, 0.09);
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-orange-500/20 selection:text-orange-300;
+    @apply bg-background text-foreground font-sans antialiased;
     transition: background-color 0.35s ease, color 0.35s ease;
   }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply tracking-tight;
   }
+}
+
+/* ── White-theme text remapping ────────────────────────────────────
+   Map hardcoded Tailwind `text-white*` utilities to dark equivalents
+   EXCEPT when they're inside absolute/fixed overlay containers
+   (image captions, modals, dark-bg sections use the overlay pattern).
+   heading elements are never in overlays, so target them directly.
+   ────────────────────────────────────────────────────────────────── */
+:root:not(.dark) {
+  /* Headings — safe to always remap, never placed in dark overlays */
+  h1.text-white, h2.text-white, h3.text-white,
+  h4.text-white, h5.text-white, h6.text-white { color: var(--lt) !important; }
+
+  /* Fully opaque white text outside overlays */
+  p.text-white:not(.absolute p, .fixed p, .bg-black p, .from-black p),
+  span.text-white:not(.absolute span, .fixed span, .bg-black span),
+  label.text-white:not(.absolute label),
+  li.text-white { color: var(--lt) !important; }
+
+  /* Opacity variants — p, span, div outside overlay containers */
+  .text-white\/90:not(.absolute .text-white\/90, .fixed .text-white\/90) { color: var(--lt-90) !important; }
+  .text-white\/80:not(.absolute .text-white\/80, .fixed .text-white\/80) { color: var(--lt-80) !important; }
+  .text-white\/70:not(.absolute .text-white\/70, .fixed .text-white\/70) { color: var(--lt-70) !important; }
+  .text-white\/65:not(.absolute .text-white\/65, .fixed .text-white\/65) { color: var(--lt-65) !important; }
+  .text-white\/60:not(.absolute .text-white\/60, .fixed .text-white\/60) { color: var(--lt-60) !important; }
+  .text-white\/55:not(.absolute .text-white\/55, .fixed .text-white\/55) { color: var(--lt-55) !important; }
+  .text-white\/50:not(.absolute .text-white\/50, .fixed .text-white\/50) { color: var(--lt-50) !important; }
+  .text-white\/45:not(.absolute .text-white\/45, .fixed .text-white\/45) { color: var(--lt-45) !important; }
+  .text-white\/40:not(.absolute .text-white\/40, .fixed .text-white\/40) { color: var(--lt-40) !important; }
+  .text-white\/35:not(.absolute .text-white\/35, .fixed .text-white\/35) { color: var(--lt-35) !important; }
+  .text-white\/30:not(.absolute .text-white\/30, .fixed .text-white\/30) { color: var(--lt-30) !important; }
+  .text-white\/25:not(.absolute .text-white\/25, .fixed .text-white\/25) { color: var(--lt-25) !important; }
+  .text-white\/20:not(.absolute .text-white\/20, .fixed .text-white\/20) { color: var(--lt-20) !important; }
+  .text-white\/15:not(.absolute .text-white\/15, .fixed .text-white\/15) { color: var(--lt-15) !important; }
+  .text-white\/10:not(.absolute .text-white\/10, .fixed .text-white\/10) { color: var(--lt-10) !important; }
+  .text-white\/5:not(.absolute .text-white\/5,  .fixed .text-white\/5)  { color: var(--lt-05) !important; }
+
+  /* Subtle bg fills used as panel/card surfaces */
+  .bg-white\/5:not(.absolute .bg-white\/5)   { background-color: rgba(14,18,28,0.04) !important; }
+  .bg-white\/8:not(.absolute .bg-white\/8)   { background-color: rgba(14,18,28,0.06) !important; }
+  .bg-white\/10:not(.absolute .bg-white\/10) { background-color: rgba(14,18,28,0.08) !important; }
+
+  /* Borders */
+  .border-white\/5:not(.absolute .border-white\/5)   { border-color: rgba(14,18,28,0.06) !important; }
+  .border-white\/8:not(.absolute .border-white\/8)   { border-color: rgba(14,18,28,0.08) !important; }
+  .border-white\/10:not(.absolute .border-white\/10) { border-color: rgba(14,18,28,0.10) !important; }
+  .border-white\/15:not(.absolute .border-white\/15) { border-color: rgba(14,18,28,0.14) !important; }
+  .border-white\/20:not(.absolute .border-white\/20) { border-color: rgba(14,18,28,0.18) !important; }
+
+  /* Spinner / border-t-white used for loading indicators */
+  .border-t-white:not(.absolute .border-t-white) { border-top-color: rgba(14,18,28,0.7) !important; }
+  .border-t-white\/20:not(.absolute .border-t-white\/20) { border-top-color: rgba(14,18,28,0.2) !important; }
 }
 
 @layer utilities {
@@ -92,20 +163,20 @@ html.light {
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
   }
-  
+
   .glass-card {
     background: var(--glass-card-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid var(--glass-card-border);
-    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
   }
 
   .masonry-grid {
     column-count: 1;
     column-gap: 1rem;
   }
-  @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+  @media (min-width: 640px)  { .masonry-grid { column-count: 2; } }
   @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
   @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
 
@@ -113,11 +184,9 @@ html.light {
     break-inside: avoid;
     margin-bottom: 1rem;
   }
-  
-  .text-balance {
-    text-wrap: balance;
-  }
-  
+
+  .text-balance { text-wrap: balance; }
+
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -126,6 +195,6 @@ html.light {
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   }
 }
