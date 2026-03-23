@@ -139,7 +139,7 @@ export function MemeMakerPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-xl overflow-hidden bg-[#080808] border border-white/10"
-              style={{ aspectRatio: "1", maxHeight: "260px" }}
+              style={{ aspectRatio: "1080 / 800", maxHeight: "260px" }}
             >
               <div className="w-full h-full flex items-center justify-start px-[3.7%]">
                 <p
@@ -166,7 +166,7 @@ export function MemeMakerPage() {
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               className="rounded-xl overflow-hidden border border-white/10"
-              style={{ maxHeight: "300px", aspectRatio: "1" }}
+              style={{ maxHeight: "300px", aspectRatio: "1080 / 800" }}
             >
               <img
                 src={previewUrl}
