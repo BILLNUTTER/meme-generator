@@ -77,6 +77,8 @@ export default function Admin() {
   type RevenueData = { total: number; completedTotal: number; count: number; completedCount: number; payments: { id: string; email?: string | null; phone?: string | null; amount: number; currency: string; description: string; status: string; createdAt: string }[] };
   const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [suspendLoading, setSuspendLoading] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [localUsers, setLocalUsers] = useState<typeof users>([]);
 
   useEffect(() => {
@@ -144,6 +146,20 @@ export default function Admin() {
       toast({ title: suspend ? "User suspended" : "User reinstated", description: suspend ? "User cannot log in." : "User can log in again." });
     } catch { toast({ variant: "destructive", title: "Error", description: "Could not update user." }); }
     finally { setSuspendLoading(null); }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeleteLoading(userId);
+    try {
+      const res = await fetch(`${baseUrl}/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      setLocalUsers(prev => prev.filter(u => u.id !== userId));
+      toast({ title: "User deleted", description: "The account has been permanently removed." });
+    } catch { toast({ variant: "destructive", title: "Error", description: "Could not delete user." }); }
+    finally { setDeleteLoading(null); setConfirmDeleteId(null); }
   };
 
   const [destLoading, setDestLoading] = useState<string | null>(null);
@@ -725,7 +741,7 @@ export default function Admin() {
           {activeSection === "users" && (
             <div>
               <h2 className="font-display text-2xl text-white mb-2">Registered Members</h2>
-              <p className="text-white/30 text-sm mb-6">{localUsers.length} members · Suspend to block login access</p>
+              <p className="text-white/30 text-sm mb-6">{localUsers.length} members · Suspend to block login · Delete to permanently remove</p>
               {localUsers.length === 0 ? (
                 <div className="h-32 flex items-center justify-center glass-card rounded-2xl text-white/30 text-sm">No members yet.</div>
               ) : (
@@ -754,23 +770,52 @@ export default function Admin() {
                             }
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => handleSuspend(user.id, !user.suspended)}
-                              disabled={suspendLoading === user.id}
-                              className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                                user.suspended
-                                  ? "bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20"
-                                  : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Suspend / Reinstate */}
+                              <button
+                                onClick={() => handleSuspend(user.id, !user.suspended)}
+                                disabled={suspendLoading === user.id}
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                                  user.suspended
+                                    ? "bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20"
+                                    : "bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20"
+                                )}
+                              >
+                                {suspendLoading === user.id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : user.suspended
+                                    ? <><ShieldCheck className="w-3 h-3" /> Reinstate</>
+                                    : <><ShieldOff className="w-3 h-3" /> Suspend</>
+                                }
+                              </button>
+
+                              {/* Delete — two-step confirm */}
+                              {confirmDeleteId === user.id ? (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    disabled={deleteLoading === user.id}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-500 transition-colors border border-red-500"
+                                  >
+                                    {deleteLoading === user.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmDeleteId(null)}
+                                    className="px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white transition-colors border border-white/10"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmDeleteId(user.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+                                >
+                                  <Trash2 className="w-3 h-3" /> Delete
+                                </button>
                               )}
-                            >
-                              {suspendLoading === user.id
-                                ? <Loader2 className="w-3 h-3 animate-spin" />
-                                : user.suspended
-                                  ? <><ShieldCheck className="w-3 h-3" /> Reinstate</>
-                                  : <><ShieldOff className="w-3 h-3" /> Suspend</>
-                              }
-                            </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

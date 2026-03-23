@@ -31,6 +31,13 @@ router.patch("/admin/users/:id/suspend", requireAuth, async (req, res): Promise<
   });
 });
 
+router.delete("/admin/users/:id", requireAuth, async (req, res): Promise<void> => {
+  const { id } = req.params;
+  const user = await UserModel.findByIdAndDelete(id);
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  res.json({ success: true, id });
+});
+
 router.get("/admin/revenue", requireAuth, async (req, res): Promise<void> => {
   const payments = await PaymentModel.find().sort({ createdAt: -1 }).limit(200);
   const total = payments.reduce((sum, p) => sum + ((p.amount as number) || 0), 0);
