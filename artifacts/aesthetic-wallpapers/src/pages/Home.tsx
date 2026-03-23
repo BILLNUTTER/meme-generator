@@ -41,9 +41,9 @@ export default function Home() {
   }, [images, activeCategory]);
 
   return (
-    <div className="min-h-screen flex flex-col pt-20 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col pt-16 overflow-x-hidden">
       {/* Sticky Banner */}
-      <div className="fixed top-20 left-0 right-0 z-30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent backdrop-blur-md border-b border-primary/10">
+      <div className="fixed top-16 left-0 right-0 z-30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent backdrop-blur-md border-b border-primary/10">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-center gap-4 text-sm font-medium">
           <span>✅ Register free — download wallpapers, memes &amp; TikToks without watermarks</span>
           {!isLoggedIn && (

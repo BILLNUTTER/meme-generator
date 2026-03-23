@@ -8,7 +8,14 @@ import { Input } from "@/components/ui/input";
 import { useRegisterUser } from "@workspace/api-client-react";
 import { useUserAuth } from "@/hooks/use-user-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, User, Lock, Mail, Check } from "lucide-react";
+
+const PERKS = [
+  "Unlimited wallpaper & meme downloads",
+  "10 free TikTok watermark-free downloads/month",
+  "Meme Maker — create your own memes",
+  "New content added daily by the admin",
+];
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -39,79 +46,134 @@ export default function Register() {
   };
 
   if (!isReady) return null;
-  if (isAuthenticated) {
-    setLocation("/dashboard");
-    return null;
-  }
+  if (isAuthenticated) { setLocation("/dashboard"); return null; }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative bg-black pt-20 flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-tr from-black via-zinc-900 to-black" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0,transparent_100%)]" />
-      </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md p-8 sm:p-12 glass-card rounded-3xl mx-4 mb-20 mt-10"
-      >
-        <div className="text-center mb-10">
-          <h1 className="font-display text-4xl text-white mb-3">Create Account</h1>
-          <p className="text-white/50 text-sm">Join free to unlock unlimited image downloads.</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1">Name</label>
-            <Input 
-              type="text"
-              value={name} 
-              onChange={e => setName(e.target.value)} 
-              placeholder="Your Name" 
-              className="bg-black/40 border-white/10"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1">Email</label>
-            <Input 
-              type="email"
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              placeholder="you@example.com" 
-              className="bg-black/40 border-white/10"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-white/70 uppercase tracking-wider ml-1">Password</label>
-            <Input 
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              placeholder="••••••••" 
-              className="bg-black/40 border-white/10"
-              required
-              minLength={6}
-            />
-          </div>
-          <Button type="submit" className="w-full h-12 text-base mt-4" disabled={isPending}>
-            {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Register Free"}
-          </Button>
-          
-          <div className="text-center pt-6 mt-6 border-t border-white/10">
-            <p className="text-sm text-white/50">
-              Already have an account?{" "}
-              <Link href="/login" className="text-white hover:text-white/80 transition-colors font-medium inline-flex items-center gap-1">
-                Login <ArrowRight className="w-3 h-3" />
-              </Link>
+      <main className="flex-1 flex items-center justify-center pt-16 pb-12 px-4">
+        <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Left — perks */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="hidden lg:block"
+          >
+            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full mb-5">
+              Free forever
+            </span>
+            <h2 className="font-display text-3xl text-foreground mb-4 leading-snug">
+              Everything you need<br />for aesthetic content.
+            </h2>
+            <p className="text-foreground/45 text-sm leading-relaxed mb-8">
+              Join thousands of users who download wallpapers, memes, and watermark-free TikToks every day.
             </p>
-          </div>
-        </form>
-      </motion.div>
+            <ul className="space-y-3.5">
+              {PERKS.map((perk) => (
+                <li key={perk} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-green-400" />
+                  </div>
+                  <span className="text-sm text-foreground/65">{perk}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          {/* Right — form */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="w-full glass-card rounded-2xl p-8 sm:p-10"
+          >
+            <div className="mb-8">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-5">
+                <User className="w-5 h-5 text-violet-400" />
+              </div>
+              <h1 className="font-display text-3xl text-foreground mb-1.5">Create account</h1>
+              <p className="text-foreground/45 text-sm">It's free — no credit card required.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                  Full name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+                  <Input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Your Name"
+                    className="pl-10 bg-foreground/4 border-foreground/10 focus:border-foreground/30 rounded-xl h-11"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                  Email address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="pl-10 bg-foreground/4 border-foreground/10 focus:border-foreground/30 rounded-xl h-11"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pl-10 bg-foreground/4 border-foreground/10 focus:border-foreground/30 rounded-xl h-11"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-11 text-sm font-semibold rounded-xl mt-2 bg-violet-600 hover:bg-violet-500 text-white border-0"
+                disabled={isPending}
+              >
+                {isPending
+                  ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Creating account…</>
+                  : <>Create Free Account <ArrowRight className="w-4 h-4 ml-1.5" /></>
+                }
+              </Button>
+            </form>
+
+            <div className="mt-7 pt-6 border-t border-foreground/8 text-center">
+              <p className="text-sm text-foreground/45">
+                Already have an account?{" "}
+                <Link href="/login" className="text-foreground font-semibold hover:opacity-80 transition-opacity">
+                  Sign in →
+                </Link>
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </main>
+
       <Footer />
     </div>
   );

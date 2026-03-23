@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import https from "https";
 import http from "http";
 import jwt from "jsonwebtoken";
-import { ImageModel } from "../lib/mongodb";
+import { ImageModel, SettingsModel } from "../lib/mongodb";
 import {
   GetImagesQueryParams,
   CreateImageBody,
@@ -39,6 +39,12 @@ function toImageJson(doc: InstanceType<typeof ImageModel>) {
     createdAt: (doc.createdAt as Date).toISOString(),
   };
 }
+
+// Public app settings (e.g. tiktokPaidMode)
+router.get("/settings", async (req, res): Promise<void> => {
+  const doc = await SettingsModel.findOne({ key: "tiktokPaidMode" });
+  res.json({ tiktokPaidMode: (doc?.value as boolean) ?? false });
+});
 
 router.get("/images", async (req, res): Promise<void> => {
   const query = GetImagesQueryParams.safeParse(req.query);

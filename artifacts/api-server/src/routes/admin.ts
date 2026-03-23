@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { UserModel, PaymentModel, ImageModel } from "../lib/mongodb";
+import { UserModel, PaymentModel, ImageModel, SettingsModel } from "../lib/mongodb";
 import { requireAuth } from "../middlewares/auth";
 import { invalidateImagesCache } from "./images";
 
@@ -78,6 +78,27 @@ router.patch("/admin/images/:id/destination", requireAuth, async (req, res): Pro
     id: (img._id as unknown as { toString(): string }).toString(),
     destination: img.destination as string,
   });
+});
+
+// ── App Settings ─────────────────────────────────────────────────────────────
+
+router.get("/admin/settings", requireAuth, async (req, res): Promise<void> => {
+  const doc = await SettingsModel.findOne({ key: "tiktokPaidMode" });
+  res.json({ tiktokPaidMode: (doc?.value as boolean) ?? false });
+});
+
+router.post("/admin/settings", requireAuth, async (req, res): Promise<void> => {
+  const { tiktokPaidMode } = req.body as { tiktokPaidMode?: boolean };
+  if (typeof tiktokPaidMode !== "boolean") {
+    res.status(400).json({ error: "tiktokPaidMode must be a boolean" });
+    return;
+  }
+  await SettingsModel.findOneAndUpdate(
+    { key: "tiktokPaidMode" },
+    { key: "tiktokPaidMode", value: tiktokPaidMode },
+    { upsert: true, new: true }
+  );
+  res.json({ tiktokPaidMode });
 });
 
 export default router;

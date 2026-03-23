@@ -72,6 +72,8 @@ export default function Admin() {
   const [ppLoading, setPpLoading] = useState(false);
   const [ppSaved, setPpSaved] = useState(false);
   const [ppError, setPpError] = useState<string | null>(null);
+  const [tiktokPaidMode, setTiktokPaidMode] = useState(false);
+  const [tkPaidLoading, setTkPaidLoading] = useState(false);
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   type RevenueData = { total: number; completedTotal: number; count: number; completedCount: number; payments: { id: string; email?: string | null; phone?: string | null; amount: number; currency: string; description: string; status: string; createdAt: string }[] };
@@ -91,7 +93,27 @@ export default function Admin() {
         if (typeof d.pesapalSandbox === "boolean") setPpSandbox(d.pesapalSandbox);
         if (d.pesapalDirectUrl)      setPpDirectUrl(d.pesapalDirectUrl);
       }).catch(() => {});
+    fetch(`${baseUrl}/api/admin/settings`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((d: { tiktokPaidMode?: boolean }) => {
+        setTiktokPaidMode(!!d.tiktokPaidMode);
+      }).catch(() => {});
   }, [isAuthenticated, token, baseUrl]);
+
+  const saveTiktokPaidMode = async (value: boolean) => {
+    setTkPaidLoading(true);
+    try {
+      await fetch(`${baseUrl}/api/admin/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ tiktokPaidMode: value }),
+      });
+      setTiktokPaidMode(value);
+    } catch {
+    } finally {
+      setTkPaidLoading(false);
+    }
+  };
 
   const savePesapal = async () => {
     setPpLoading(true); setPpError(null); setPpSaved(false);
@@ -330,7 +352,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col pt-20 bg-background">
+    <div className="min-h-screen flex flex-col pt-16 bg-background">
       <Header />
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-10">
 
@@ -829,8 +851,46 @@ export default function Admin() {
 
           {/* Settings */}
           {activeSection === "settings" && (
-            <div className="max-w-xl">
-              <h2 className="font-display text-2xl text-white mb-6">Pesapal Settings</h2>
+            <div className="max-w-xl space-y-6">
+              {/* TikTok Paid Mode Toggle */}
+              <div>
+                <h2 className="font-display text-2xl text-white mb-4">TikTok Download Mode</h2>
+                <div className="glass-card rounded-2xl p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-white text-sm">Require payment for TikTok downloads</p>
+                      <p className="text-white/35 text-xs mt-0.5">
+                        {tiktokPaidMode
+                          ? "ON — users need to pay Ksh 70/month or use their 10 free monthly downloads."
+                          : "OFF — TikTok downloads are free for all users (no quota limits)."}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => saveTiktokPaidMode(!tiktokPaidMode)}
+                      disabled={tkPaidLoading}
+                      className={cn(
+                        "relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center shrink-0 ml-4",
+                        tiktokPaidMode ? "bg-violet-500" : "bg-white/15"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute w-4 h-4 rounded-full bg-white shadow transition-all duration-300",
+                        tiktokPaidMode ? "left-7" : "left-1"
+                      )} />
+                    </button>
+                  </div>
+                  <div className={cn(
+                    "mt-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2",
+                    tiktokPaidMode
+                      ? "bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                      : "bg-green-500/10 text-green-400 border border-green-500/20"
+                  )}>
+                    {tiktokPaidMode ? "💳 Payment mode active" : "🆓 Free mode active — everyone can download"}
+                  </div>
+                </div>
+              </div>
+
+              <h2 className="font-display text-2xl text-white mb-0">Pesapal Settings</h2>
               <div className="glass-card rounded-2xl p-6 space-y-5">
                 <div className="flex items-center gap-3 pb-2 border-b border-white/5">
                   <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">

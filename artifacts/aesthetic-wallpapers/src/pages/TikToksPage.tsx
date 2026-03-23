@@ -30,7 +30,7 @@ export function TikToksPage() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex flex-col pt-20 bg-background">
+    <div className="min-h-screen flex flex-col pt-16 bg-background">
       <Header />
 
       {viewerIndex !== null && (

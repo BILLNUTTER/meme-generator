@@ -52,6 +52,7 @@ export function TikTokDownloadPage() {
   const [tiktokActive, setTiktokActive] = useState(false);
   const [tiktokExpiry, setTiktokExpiry] = useState<string | null>(null);
   const [subLoading, setSubLoading] = useState(true);
+  const [tiktokPaidMode, setTiktokPaidMode] = useState(false);
 
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
@@ -68,10 +69,15 @@ export function TikTokDownloadPage() {
       })
       .catch(() => {})
       .finally(() => setSubLoading(false));
+    fetch(`${BASE_URL}/api/settings`)
+      .then(r => r.json())
+      .then((d: { tiktokPaidMode?: boolean }) => setTiktokPaidMode(!!d.tiktokPaidMode))
+      .catch(() => {});
   }, [isAuthenticated]);
 
   const remaining = Math.max(0, FREE_LIMIT - quota.count);
-  const exhausted = !tiktokActive && remaining <= 0;
+  // When admin disables payment mode, TikTok downloads are always free
+  const exhausted = tiktokPaidMode && !tiktokActive && remaining <= 0;
 
   const handleFetch = async () => {
     if (!url.trim()) return;
@@ -139,7 +145,7 @@ export function TikTokDownloadPage() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex flex-col pt-20 bg-background">
+    <div className="min-h-screen flex flex-col pt-16 bg-background">
       <Header />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-8">
@@ -164,7 +170,19 @@ export function TikTokDownloadPage() {
         </div>
 
         {/* Quota / subscription badge */}
-        {!subLoading && (
+        {!subLoading && !tiktokPaidMode && (
+          <div className="flex items-center gap-3 rounded-2xl p-4 mb-8 border border-green-500/25 bg-gradient-to-r from-green-500/10 to-emerald-500/5">
+            <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-green-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white">Free Mode — Unlimited downloads</p>
+              <p className="text-xs text-white/40">TikTok downloads are free for all users right now</p>
+            </div>
+            <span className="text-xs font-semibold text-green-300 bg-green-500/15 border border-green-500/20 px-2.5 py-1 rounded-lg">Free</span>
+          </div>
+        )}
+        {!subLoading && tiktokPaidMode && (
           tiktokActive ? (
             <div className="flex items-center gap-3 rounded-2xl p-4 mb-8 border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-violet-500/10">
               <div className="w-8 h-8 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
@@ -222,6 +240,7 @@ export function TikTokDownloadPage() {
             </div>
           )
         )}
+        
 
         {/* Input */}
         <div className="glass-card rounded-2xl p-6 mb-6">

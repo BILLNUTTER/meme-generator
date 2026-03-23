@@ -79,7 +79,7 @@ export function MemeMakerPage() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex flex-col pt-20 bg-background">
+    <div className="min-h-screen flex flex-col pt-16 bg-background">
       <Header />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-8">

@@ -65,6 +65,7 @@ export function Dashboard() {
   const [tiktokActive, setTiktokActive] = useState(false);
   const [tiktokExpiry, setTiktokExpiry] = useState<string | null>(null);
   const [subLoading, setSubLoading] = useState(true);
+  const [tiktokPaidMode, setTiktokPaidMode] = useState(false);
 
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
@@ -83,6 +84,10 @@ export function Dashboard() {
       })
       .catch(() => {})
       .finally(() => setSubLoading(false));
+    fetch(`${baseUrl}/api/settings`)
+      .then(r => r.json())
+      .then((d: { tiktokPaidMode?: boolean }) => setTiktokPaidMode(!!d.tiktokPaidMode))
+      .catch(() => {});
   }, [isAuthenticated, token, baseUrl]);
 
   const { data, isLoading: picksLoading } = useGetDashboardImages(undefined, {
@@ -98,7 +103,7 @@ export function Dashboard() {
   const picks = allImages.slice(0, 4);
 
   const remaining = Math.max(0, FREE_LIMIT - quota.count);
-  const exhausted = !tiktokActive && remaining <= 0;
+  const exhausted = tiktokPaidMode && !tiktokActive && remaining <= 0;
 
   const scrollTo = (idx: number) => {
     const clamped = Math.max(0, Math.min(SERVICES.length - 1, idx));
@@ -157,7 +162,7 @@ export function Dashboard() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex flex-col pt-20 bg-background">
+    <div className="min-h-screen flex flex-col pt-16 bg-background">
       <Header />
 
       <AppInstallPrompt />
@@ -221,6 +226,21 @@ export function Dashboard() {
                 <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-yellow-500/15 border border-yellow-500/20">
                   <CheckCircle2 className="w-3.5 h-3.5 text-yellow-400" />
                   <span className="text-xs font-semibold text-yellow-300">Unlimited</span>
+                </div>
+              </motion.div>
+            ) : !tiktokPaidMode ? (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-4 rounded-2xl border border-green-500/25 bg-gradient-to-r from-green-500/10 to-emerald-500/5 px-5 py-4">
+                <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5 text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white">TikTok Free Mode</p>
+                  <p className="text-xs text-white/40 mt-0.5">Downloads are free for everyone right now — no limits</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-green-500/15 border border-green-500/20">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                  <span className="text-xs font-semibold text-green-300">Free</span>
                 </div>
               </motion.div>
             ) : (

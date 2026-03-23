@@ -2,10 +2,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Download, ChevronLeft, ChevronRight,
-  Play, Pause, Volume2, VolumeX, Loader2,
+  Play, Pause, Volume2, VolumeX, Loader2, ExternalLink,
 } from "lucide-react";
 import type { Image } from "@workspace/api-client-react/src/generated/api.schemas";
 import { buildProxyUrl, downloadWithProgress } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentViewerProps {
   items: Image[];
@@ -23,13 +24,13 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
   const [muted, setMuted] = useState(false);
   const [videoLoading, setVideoLoading] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const { toast } = useToast();
 
   const item = items[index];
   const isVideo = item?.type === "tiktok";
   const hasPrev = index > 0;
   const hasNext = index < items.length - 1;
 
-  // Build the streaming URL — backend fetches fresh TikTok URL on demand
   const videoSrc = isVideo && item?.id
     ? `${baseUrl}/api/images/${item.id}/video${token ? `?token=${encodeURIComponent(token)}` : ""}`
     : null;
@@ -49,7 +50,6 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
     return () => window.removeEventListener("keydown", handleKey);
   }, [hasPrev, hasNext, onClose]);
 
-  // Reset video state when navigating
   useEffect(() => {
     setPlaying(false);
     setDlProgress(null);
@@ -63,13 +63,12 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
   const handleDownload = useCallback(async () => {
     if (!item || dlProgress !== null) return;
     const ext = isVideo ? "mp4" : "jpg";
-    const safe = (item.title ?? item.id ?? "file").replace(/[^a-z0-9]/gi, "-").slice(0, 50);
+    const safe = (item.title ?? item.id ?? "aesthetic").replace(/[^a-z0-9]/gi, "-").slice(0, 50);
     const name = `${safe}.${ext}`;
 
     try {
       setDlProgress(0);
       if (isVideo) {
-        // Download via same streaming endpoint with content-disposition override
         const dlUrl = `${baseUrl}/api/images/${item.id}/video${token ? `?token=${encodeURIComponent(token)}` : ""}`;
         const resp = await fetch(dlUrl);
         if (!resp.ok || !resp.body) throw new Error("fetch failed");
@@ -89,17 +88,45 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
         a.download = name;
         a.click();
       } else {
-        await downloadWithProgress(
-          buildProxyUrl(item.url, name, baseUrl),
-          name,
-          (p) => setDlProgress(p)
-        );
+        // Try proxy download first; fallback to opening image in new tab
+        try {
+          await downloadWithProgress(
+            buildProxyUrl(item.url, name, baseUrl),
+            name,
+            (p) => setDlProgress(p)
+          );
+        } catch {
+          // Proxy failed — try direct link
+          try {
+            const a = document.createElement("a");
+            a.href = item.url;
+            a.download = name;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.click();
+          } catch {
+            // Last resort — open in new tab
+            window.open(item.url, "_blank", "noopener,noreferrer");
+            toast({
+              title: "Opening in new tab",
+              description: "Long-press the image to save it to your device.",
+            });
+          }
+        }
       }
     } catch {
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: "Could not download this file. Try opening it in a new tab.",
+      });
+      if (!isVideo) {
+        window.open(item.url, "_blank", "noopener,noreferrer");
+      }
     } finally {
       setDlProgress(null);
     }
-  }, [item, isVideo, baseUrl, token, dlProgress]);
+  }, [item, isVideo, baseUrl, token, dlProgress, toast]);
 
   const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
@@ -141,7 +168,7 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
         onTouchEnd={handleTouchEnd}
       >
         {/* ── Top bar ── */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 pt-10 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 pt-safe bg-gradient-to-b from-black/80 to-transparent">
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
@@ -149,20 +176,34 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
             <X className="w-5 h-5 text-white" />
           </button>
           <span className="text-white/50 text-sm font-medium">{index + 1} / {items.length}</span>
-          <button
-            onClick={handleDownload}
-            disabled={dlProgress !== null}
-            className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center disabled:opacity-40 active:scale-90 transition-transform"
-          >
-            {dlProgress !== null
-              ? <Loader2 className="w-4 h-4 text-white animate-spin" />
-              : <Download className="w-4 h-4 text-white" />}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Open in new tab button for images */}
+            {!isVideo && (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+                title="Open in new tab"
+              >
+                <ExternalLink className="w-4 h-4 text-white" />
+              </a>
+            )}
+            <button
+              onClick={handleDownload}
+              disabled={dlProgress !== null}
+              className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center disabled:opacity-40 active:scale-90 transition-transform"
+              title="Download"
+            >
+              {dlProgress !== null
+                ? <Loader2 className="w-4 h-4 text-white animate-spin" />
+                : <Download className="w-4 h-4 text-white" />}
+            </button>
+          </div>
         </div>
 
         {/* ── Content ── */}
         {isVideo ? (
-          // Full-screen TikTok video layout
           <div className="absolute inset-0 flex items-center justify-center" onClick={togglePlay}>
             {videoSrc && (
               <video
@@ -182,8 +223,6 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
                 onLoadStart={() => setVideoLoading(true)}
               />
             )}
-
-            {/* Play/pause overlay */}
             <AnimatePresence>
               {(!playing || videoLoading) && (
                 <motion.div
@@ -200,8 +239,6 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Mute button */}
             <button
               onClick={(e) => { e.stopPropagation(); toggleMute(); }}
               className="absolute bottom-24 right-5 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/15 flex items-center justify-center z-10"
@@ -210,7 +247,6 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
             </button>
           </div>
         ) : (
-          // Image layout — centered, fills available space
           <div className="absolute inset-0 flex items-center justify-center p-2">
             <img
               src={item.url}
@@ -255,10 +291,10 @@ export function ContentViewer({ items, startIndex, onClose, baseUrl, token }: Co
             <div className="w-28 h-1.5 rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-white transition-all duration-200"
-                style={{ width: `${dlProgress}%` }}
+                style={{ width: `${Math.max(5, dlProgress)}%` }}
               />
             </div>
-            <span className="text-xs text-white/60">{dlProgress}%</span>
+            <span className="text-xs text-white/60">{dlProgress > 0 ? `${dlProgress}%` : "..."}</span>
           </div>
         )}
       </motion.div>
