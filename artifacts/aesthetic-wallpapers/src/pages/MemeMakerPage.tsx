@@ -141,7 +141,7 @@ export function MemeMakerPage() {
               className="rounded-xl overflow-hidden bg-[#080808] border border-white/10"
               style={{ aspectRatio: "1", maxHeight: "260px" }}
             >
-              <div className="w-full h-full flex items-start justify-start px-[3.7%] py-[5.5%]">
+              <div className="w-full h-full flex items-center justify-start px-[3.7%]">
                 <p
                   className="text-white text-left w-full"
                   style={{

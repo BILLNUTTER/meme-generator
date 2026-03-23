@@ -35,7 +35,6 @@ export function generateMemeImage(text: string): string {
   const FONT_SIZE  = 35;
   const FONT       = `${FONT_SIZE}px Impact, "Arial Black", sans-serif`;
   const LEFT       = 40;
-  const TOP        = 60;
   const MAX_W      = size - LEFT - 40;   // 1000px usable width
   const LINE_H     = FONT_SIZE * 1.4;
 
@@ -59,9 +58,13 @@ export function generateMemeImage(text: string): string {
   }
   if (current) lines.push(current);
 
+  // Vertically center the text block
+  const totalH = lines.length * LINE_H;
+  const startY = (size - totalH) / 2;
+
   // Draw each line — black stroke outline + white fill
   lines.forEach((line, i) => {
-    const y = TOP + i * LINE_H;
+    const y = startY + i * LINE_H;
     ctx.font        = FONT;
     ctx.lineWidth   = FONT_SIZE * 0.12;
     ctx.lineJoin    = "round";
