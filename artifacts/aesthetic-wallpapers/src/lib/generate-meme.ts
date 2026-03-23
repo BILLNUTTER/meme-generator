@@ -32,15 +32,18 @@ export function generateMemeImage(text: string): string {
   ctx.restore();
 
   const leftMargin = 40;
-  const maxWidth = size - leftMargin - 40;
+  const maxWidth = size - leftMargin - 40; // 1000px usable
+
+  // Normalise: collapse explicit newlines / extra spaces into single spaces
+  const clean = text.trim().replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ");
 
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  // Greedy word-wrap: fills each line as wide as possible before starting the next
+  // Greedy word-wrap at a given font size
   function wrapText(fs: number): string[] {
     ctx.font = `${fs}px Impact, "Arial Black", sans-serif`;
-    const words = text.split(" ");
+    const words = clean.split(" ");
     const result: string[] = [];
     let line = "";
     for (const word of words) {
@@ -56,60 +59,59 @@ export function generateMemeImage(text: string): string {
     return result;
   }
 
-  // Start with a font size based on text length
-  let fontSize =
-    text.length > 200 ? 44 :
-    text.length > 140 ? 56 :
-    text.length > 80  ? 72 :
-    text.length > 40  ? 90 :
-    text.length > 20  ? 110 : 132;
+  // ── Strategy ──────────────────────────────────────────────────────────────
+  // 1. Try to keep text on ONE line. Calculate the largest font that fits the
+  //    entire text in maxWidth without any wrapping.
+  // 2. If that font would be smaller than MIN_1LINE (too small to read),
+  //    accept two lines and find the largest font for 2-line layout.
+  // 3. Hard-cap at 2 lines.
 
-  let lines = wrapText(fontSize);
+  const MAX_FONT = 210;
+  const MIN_1LINE = 68;  // Below this we fall back to 2 lines
+  const MIN_FONT  = 36;  // Absolute floor
 
-  // Long text: shrink font until it fits in at most 2 lines
-  const MIN_FONT = 36;
-  while (lines.length > 2 && fontSize > MIN_FONT) {
-    fontSize -= 4;
+  ctx.font = `${MAX_FONT}px Impact, "Arial Black", sans-serif`;
+  const fullWidth = ctx.measureText(clean).width;
+
+  // Largest font that fits the whole text on a single line
+  const singleLineFont = Math.floor(MAX_FONT * (maxWidth / fullWidth));
+
+  let fontSize: number;
+  let lines: string[];
+
+  if (singleLineFont >= MIN_1LINE) {
+    // ── 1-line layout ──────────────────────────────────────────────────────
+    // Cap so short text doesn't become absurdly huge
+    fontSize = Math.min(singleLineFont, MAX_FONT);
+    lines = wrapText(fontSize); // should always be 1, but recalc for safety
+  } else {
+    // ── 2-line layout ──────────────────────────────────────────────────────
+    // Start from the font that would theoretically halve the line width,
+    // then shrink until it actually wraps into ≤ 2 lines.
+    fontSize = Math.min(Math.floor(singleLineFont * 1.8), MAX_FONT);
     lines = wrapText(fontSize);
-  }
-
-  // If still > 2 lines at minimum font (extremely long text), hard-clip to 2
-  if (lines.length > 2) {
-    lines = lines.slice(0, 2);
-  }
-
-  // Short text (1 line): scale up font so the line fills at least 2/3 of canvas
-  if (lines.length === 1) {
-    ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
-    const lineWidth = ctx.measureText(lines[0]).width;
-    const targetWidth = maxWidth * (2 / 3);
-    if (lineWidth < targetWidth) {
-      const scaled = Math.floor(fontSize * (targetWidth / lineWidth));
-      const cappedFont = Math.min(scaled, 220);
-      ctx.font = `${cappedFont}px Impact, "Arial Black", sans-serif`;
-      // Only apply if it still stays on 1 line
-      if (ctx.measureText(lines[0]).width <= maxWidth) {
-        fontSize = cappedFont;
-        lines = wrapText(fontSize);
-      }
+    while (lines.length > 2 && fontSize > MIN_FONT) {
+      fontSize -= 4;
+      lines = wrapText(fontSize);
     }
+    if (lines.length > 2) lines = lines.slice(0, 2);
   }
 
-  // Draw
-  const lineH = fontSize * 1.22;
-  const totalH = lines.length * lineH;
-  const startY = (size - totalH) / 2 + lineH / 2;
+  // ── Draw ──────────────────────────────────────────────────────────────────
+  const lineH   = fontSize * 1.22;
+  const totalH  = lines.length * lineH;
+  const startY  = (size - totalH) / 2 + lineH / 2;
 
   lines.forEach((l, i) => {
     const y = startY + i * lineH;
     ctx.font = `${fontSize}px Impact, "Arial Black", sans-serif`;
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.lineWidth = fontSize * 0.12;
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#000000";
+    ctx.shadowColor   = "transparent";
+    ctx.shadowBlur    = 0;
+    ctx.lineWidth     = fontSize * 0.12;
+    ctx.lineJoin      = "round";
+    ctx.strokeStyle   = "#000000";
     ctx.strokeText(l, leftMargin, y, maxWidth);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle     = "#ffffff";
     ctx.fillText(l, leftMargin, y, maxWidth);
   });
 
