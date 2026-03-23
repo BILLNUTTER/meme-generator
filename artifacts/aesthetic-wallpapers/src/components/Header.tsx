@@ -1,10 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
-  LogOut, LayoutDashboard, Sun, Moon, Menu, X,
+  LogOut, LayoutDashboard, Menu, X,
   ImageIcon, Laugh, Music, Download, Wand2,
 } from "lucide-react";
-import { useTheme } from "@/context/theme-context";
 
 interface UserInfo { id: string; name: string; email: string; }
 
@@ -18,7 +17,6 @@ const NAV_LINKS = [
 
 export function Header() {
   const [location, navigate] = useLocation();
-  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<UserInfo | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const isDashboard = location.startsWith("/dashboard");
@@ -68,7 +66,7 @@ export function Header() {
                   href={href}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
                     isActive(href)
-                      ? "bg-orange-500/15 text-orange-300 border border-orange-500/20"
+                      ? "bg-orange-500/15 text-orange-600 border border-orange-500/20"
                       : "text-foreground/50 hover:text-foreground hover:bg-foreground/5"
                   }`}
                 >
@@ -80,17 +78,6 @@ export function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-foreground/50 hover:text-foreground hover:bg-foreground/8 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark"
-                ? <Sun className="w-4 h-4" />
-                : <Moon className="w-4 h-4" />}
-            </button>
-
             {user ? (
               <>
                 <span className="text-sm text-foreground/60 hidden md:block">
@@ -153,7 +140,7 @@ export function Header() {
                 href={href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive(href)
-                    ? "bg-orange-500/15 text-orange-300"
+                    ? "bg-orange-500/15 text-orange-600"
                     : "text-foreground/60 hover:text-foreground hover:bg-foreground/6"
                 }`}
               >
