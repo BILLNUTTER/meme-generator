@@ -70,10 +70,18 @@
 @layer base {
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-weight: 500;
+  }
+  p, span, li, label, a, button {
+    font-weight: 500;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply tracking-tight;
+    font-weight: 700;
+  }
+  input, textarea, select {
+    font-weight: 500;
   }
 }
 
