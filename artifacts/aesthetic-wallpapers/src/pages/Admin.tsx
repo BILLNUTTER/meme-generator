@@ -33,10 +33,10 @@ type Section = "overview" | "add" | "landing" | "dashboard" | "memes" | "tiktoks
 const SECTIONS: { id: Section; label: string; icon: React.ElementType; desc: string; color: string; border: string; accent: string }[] = [
   { id: "overview",  label: "Overview",    icon: BarChart3,   desc: "Stats & recent activity",   color: "from-white/5 to-white/[0.02]",       border: "border-white/10",    accent: "text-white/70"    },
   { id: "add",       label: "Add Content", icon: Plus,        desc: "Upload wallpapers, memes, TikToks", color: "from-blue-600/20 to-cyan-600/10",  border: "border-blue-500/20", accent: "text-blue-400"    },
-  { id: "landing",   label: "Landing",     icon: LayoutGrid,  desc: "Manage landing images",     color: "from-violet-600/20 to-purple-600/10", border: "border-violet-500/20",accent: "text-violet-400"  },
+  { id: "landing",   label: "Landing",     icon: LayoutGrid,  desc: "Manage landing images",     color: "from-orange-600/20 to-amber-600/10", border: "border-orange-500/20",accent: "text-orange-400"  },
   { id: "dashboard", label: "Dashboard",   icon: ImageIcon,   desc: "Dashboard wallpapers",      color: "from-cyan-600/20 to-teal-600/10",     border: "border-cyan-500/20", accent: "text-cyan-400"    },
   { id: "memes",     label: "Memes",       icon: Laugh,       desc: "View & delete memes",       color: "from-yellow-600/20 to-amber-600/10",  border: "border-yellow-500/20",accent: "text-yellow-400"  },
-  { id: "tiktoks",   label: "TikToks",     icon: Music,       desc: "Manage TikTok gallery",     color: "from-pink-600/20 to-rose-600/10",     border: "border-pink-500/20", accent: "text-pink-400"    },
+  { id: "tiktoks",   label: "TikToks",     icon: Music,       desc: "Manage TikTok gallery",     color: "from-blue-600/20 to-cyan-600/10",     border: "border-blue-500/20", accent: "text-blue-400"    },
   { id: "users",     label: "Users",       icon: Users,       desc: "Registered members",        color: "from-green-600/20 to-emerald-600/10", border: "border-green-500/20",accent: "text-green-400"   },
   { id: "settings",  label: "Settings",    icon: Settings,    desc: "Pesapal payment config",    color: "from-orange-600/20 to-amber-600/10",  border: "border-orange-500/20",accent: "text-orange-400"  },
 ];
@@ -372,7 +372,7 @@ export default function Admin() {
           {[
             { label: "Wallpapers", count: allImages.filter(i => i.type !== "meme" && i.type !== "tiktok").length, icon: ImageIcon, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
             { label: "Memes",      count: memeImages.length,     icon: Laugh,      color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20" },
-            { label: "TikToks",    count: tiktokImages.length,   icon: Music,      color: "text-pink-400",   bg: "bg-pink-500/10 border-pink-500/20"   },
+            { label: "TikToks",    count: tiktokImages.length,   icon: Music,      color: "text-blue-400",   bg: "bg-blue-500/10 border-blue-500/20"   },
             { label: "Members",    count: localUsers.length,     icon: Users,      color: "text-green-400",  bg: "bg-green-500/10 border-green-500/20"  },
           ].map(stat => {
             const Icon = stat.icon;
@@ -464,7 +464,7 @@ export default function Admin() {
                 </div>
                 <div className="glass-card rounded-2xl p-5 col-span-2 sm:col-span-1 border border-white/5">
                   <div className="flex items-center gap-2 mb-2">
-                    <Users className="w-4 h-4 text-violet-400" />
+                    <Users className="w-4 h-4 text-orange-400" />
                     <p className="text-xs text-white/40 uppercase tracking-wider">Active Users</p>
                   </div>
                   <p className="text-2xl font-bold text-white">{localUsers.filter((u: { suspended?: boolean }) => !u.suspended).length}</p>
@@ -513,7 +513,7 @@ export default function Admin() {
                   <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Recent Members</p>
                   {localUsers.slice(0, 4).map((u: { id: string; name: string; email: string; createdAt: string }) => (
                     <div key={u.id} className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-xs text-violet-300 font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-xs text-orange-300 font-bold shrink-0">
                         {(u.name?.[0] ?? u.email[0]).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -870,7 +870,7 @@ export default function Admin() {
                       disabled={tkPaidLoading}
                       className={cn(
                         "relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center shrink-0 ml-4",
-                        tiktokPaidMode ? "bg-violet-500" : "bg-white/15"
+                        tiktokPaidMode ? "bg-orange-500" : "bg-white/15"
                       )}
                     >
                       <span className={cn(
@@ -882,7 +882,7 @@ export default function Admin() {
                   <div className={cn(
                     "mt-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2",
                     tiktokPaidMode
-                      ? "bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                      ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
                       : "bg-green-500/10 text-green-400 border border-green-500/20"
                   )}>
                     {tiktokPaidMode ? "💳 Payment mode active" : "🆓 Free mode active — everyone can download"}
@@ -1030,7 +1030,7 @@ function TikTokList({ images, onDelete, isDeleting }: {
                 <p className="text-white text-xs truncate font-medium">{img.title || "TikTok"}</p>
                 {img.tiktokUrl && (
                   <a href={img.tiktokUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-pink-300 text-xs hover:underline">View original</a>
+                    className="text-blue-300 text-xs hover:underline">View original</a>
                 )}
               </div>
               <button onClick={() => onDelete(img.id)} disabled={isDeleting}

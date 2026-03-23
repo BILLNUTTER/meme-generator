@@ -37,9 +37,9 @@ export function DownloadProgressBar({ downloads, onDismiss }: Props) {
               ) : item.progress === 100 || item.done ? (
                 <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
               ) : item.progress === -1 ? (
-                <Loader2 className="w-4 h-4 text-pink-400 animate-spin shrink-0" />
+                <Loader2 className="w-4 h-4 text-orange-400 animate-spin shrink-0" />
               ) : (
-                <Download className="w-4 h-4 text-pink-400 shrink-0 animate-pulse" />
+                <Download className="w-4 h-4 text-blue-400 shrink-0 animate-pulse" />
               )}
 
               <span className="text-white/90 text-xs font-medium truncate flex-1">
@@ -73,7 +73,7 @@ export function DownloadProgressBar({ downloads, onDismiss }: Props) {
                     ? "bg-red-500"
                     : item.progress === 100 || item.done
                     ? "bg-green-400"
-                    : "bg-gradient-to-r from-pink-500 to-rose-400"
+                    : "bg-gradient-to-r from-orange-500 to-amber-400"
                 } ${item.progress === -1 ? "animate-pulse" : ""}`}
               />
             </div>

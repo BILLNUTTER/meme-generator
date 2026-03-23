@@ -61,7 +61,7 @@ export default function Register() {
             transition={{ duration: 0.5 }}
             className="hidden lg:block"
           >
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full mb-5">
+            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full mb-5">
               Free forever
             </span>
             <h2 className="font-display text-3xl text-foreground mb-4 leading-snug">
@@ -90,8 +90,8 @@ export default function Register() {
             className="w-full glass-card rounded-2xl p-8 sm:p-10"
           >
             <div className="mb-8">
-              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-5">
-                <User className="w-5 h-5 text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-5">
+                <User className="w-5 h-5 text-orange-400" />
               </div>
               <h1 className="font-display text-3xl text-foreground mb-1.5">Create account</h1>
               <p className="text-foreground/45 text-sm">It's free — no credit card required.</p>
@@ -152,7 +152,7 @@ export default function Register() {
 
               <Button
                 type="submit"
-                className="w-full h-11 text-sm font-semibold rounded-xl mt-2 bg-violet-600 hover:bg-violet-500 text-white border-0"
+                className="w-full h-11 text-sm font-semibold rounded-xl mt-2 bg-orange-500 hover:bg-orange-400 text-white border-0"
                 disabled={isPending}
               >
                 {isPending

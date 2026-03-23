@@ -119,7 +119,7 @@ export function TikTokPlayer({ isOpen, tiktokUrl, thumbnailUrl, title, onClose, 
                       href={tiktokUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-pink-400 text-sm hover:text-pink-300 transition-colors"
+                      className="inline-flex items-center gap-2 text-blue-400 text-sm hover:text-blue-300 transition-colors"
                     >
                       Open on TikTok <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -149,7 +149,7 @@ export function TikTokPlayer({ isOpen, tiktokUrl, thumbnailUrl, title, onClose, 
                 <button
                   onClick={() => videoUrl && onDownload(videoUrl, title)}
                   disabled={!videoUrl || isLoading}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold py-3 rounded-2xl transition-all active:scale-95 shadow-lg shadow-pink-500/30"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-400 hover:to-blue-400 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold py-3 rounded-2xl transition-all active:scale-95 shadow-lg shadow-orange-500/30"
                 >
                   <Download className="w-4 h-4" />
                   Download No-Watermark

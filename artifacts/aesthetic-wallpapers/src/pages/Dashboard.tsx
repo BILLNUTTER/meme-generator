@@ -38,8 +38,8 @@ function fmtExpiry(iso: string) {
 
 const SERVICES = [
   { id: "wallpapers",      label: "Wallpapers",      desc: "Browse aesthetic collections",  icon: ImageIcon, color: "from-blue-600/30 to-cyan-600/20",     border: "border-blue-500/20",   accent: "text-blue-400",   href: "/wallpapers"      },
-  { id: "tiktoks",         label: "TikTok Gallery",  desc: "Watch curated videos",          icon: Music,     color: "from-pink-600/30 to-rose-600/20",      border: "border-pink-500/20",   accent: "text-pink-400",   href: "/tiktoks"         },
-  { id: "tiktok-download", label: "TikTok Download", desc: "No watermark · HD quality",     icon: Download,  color: "from-violet-600/30 to-purple-600/20",  border: "border-violet-500/20", accent: "text-violet-400", href: "/tiktok-download" },
+  { id: "tiktoks",         label: "TikTok Gallery",  desc: "Watch curated videos",          icon: Music,     color: "from-blue-600/30 to-cyan-600/20",      border: "border-blue-500/20",   accent: "text-blue-400",   href: "/tiktoks"         },
+  { id: "tiktok-download", label: "TikTok Download", desc: "No watermark · HD quality",     icon: Download,  color: "from-orange-600/30 to-amber-600/20",  border: "border-orange-500/20", accent: "text-orange-400", href: "/tiktok-download" },
   { id: "memes",           label: "Meme Gallery",    desc: "Browse fresh memes daily",      icon: Laugh,     color: "from-yellow-600/30 to-amber-600/20",   border: "border-yellow-500/20", accent: "text-yellow-400", href: "/memes"           },
   { id: "meme-maker",      label: "Meme Maker",      desc: "Create your own — always free", icon: Wand2,     color: "from-green-600/30 to-emerald-600/20",  border: "border-green-500/20",  accent: "text-green-400",  href: "/meme-maker"      },
 ];
@@ -180,7 +180,7 @@ export function Dashboard() {
       {isDownloading && dlProgress > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl min-w-[220px]">
           <div className="w-32 h-1.5 rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-pink-400 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
+            <div className="h-full rounded-full bg-orange-400 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
           </div>
           <span className="text-xs text-white/60">{dlProgress}%</span>
         </div>
@@ -210,7 +210,7 @@ export function Dashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
             {tiktokActive ? (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 rounded-2xl border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-violet-500/10 px-5 py-4">
+                className="flex items-center gap-4 rounded-2xl border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 px-5 py-4">
                 <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
                   <Crown className="w-5 h-5 text-yellow-400" />
                 </div>
@@ -264,7 +264,7 @@ export function Dashboard() {
                   </div>
                 </div>
                 <Button size="sm"
-                  className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-white text-xs font-semibold"
+                  className="shrink-0 bg-gradient-to-r from-orange-500 to-green-500 border-0 text-white text-xs font-semibold"
                   onClick={() => setLocation("/pay")}>
                   Upgrade Ksh 70
                 </Button>
@@ -332,7 +332,7 @@ export function Dashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {picks.map((img, i) => {
                 const typeLabel = img.type === "meme" ? "Meme" : img.type === "tiktok" ? "TikTok" : "Wallpaper";
-                const typeBadgeColor = img.type === "meme" ? "text-yellow-300" : img.type === "tiktok" ? "text-pink-300" : "text-blue-300";
+                const typeBadgeColor = img.type === "meme" ? "text-yellow-300" : img.type === "tiktok" ? "text-blue-300" : "text-green-300";
                 return (
                   <motion.div key={img.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                     className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-square bg-white/5 active:scale-95 transition-transform"
@@ -355,17 +355,17 @@ export function Dashboard() {
 
         {/* ── TIKTOK DOWNLOADER ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
-          <div className="rounded-3xl border border-pink-500/10 bg-gradient-to-br from-pink-600/5 to-violet-600/5 p-8 sm:p-10">
+          <div className="rounded-3xl border border-orange-500/10 bg-gradient-to-br from-orange-600/5 to-blue-600/5 p-8 sm:p-10">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-medium mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-medium mb-3">
                   <Zap className="w-3 h-3" /> Watermark-free
                 </div>
                 <h2 className="font-display text-3xl sm:text-4xl text-white mb-1">TikTok Downloader</h2>
                 <p className="text-white/40">Paste any TikTok link and download the original HD video — no watermark.</p>
               </div>
               <button onClick={() => setLocation("/tiktok-download")}
-                className="shrink-0 text-xs text-pink-400 hover:text-pink-300 transition-colors border border-pink-500/20 px-4 py-2 rounded-xl">
+                className="shrink-0 text-xs text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/20 px-4 py-2 rounded-xl">
                 Full page →
               </button>
             </div>
@@ -388,7 +388,7 @@ export function Dashboard() {
                   <p className="text-sm font-semibold text-white">Monthly limit reached — {FREE_LIMIT}/{FREE_LIMIT} used</p>
                   <p className="text-xs text-white/40">Upgrade for unlimited downloads · Resets next month</p>
                 </div>
-                <Button size="sm" className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-xs" onClick={() => setLocation("/pay")}>
+                <Button size="sm" className="shrink-0 bg-gradient-to-r from-orange-500 to-green-500 border-0 text-xs" onClick={() => setLocation("/pay")}>
                   Upgrade Ksh 70
                 </Button>
               </div>
@@ -409,7 +409,7 @@ export function Dashboard() {
                   className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/20 h-12" />
               </div>
               <Button onClick={handleTkFetch} disabled={!tkUrl.trim() || exhausted || tkLoading}
-                className="shrink-0 bg-pink-600 hover:bg-pink-500 h-12 px-6">
+                className="shrink-0 bg-orange-500 hover:bg-orange-400 h-12 px-6">
                 {tkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch"}
               </Button>
             </div>

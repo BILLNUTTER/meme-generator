@@ -48,35 +48,35 @@
   --glass-card-border: rgba(255,255,255,0.09);
 }
 
-/* ── Light theme overrides ─────────────────────────────────────────────── */
+/* ── Light theme: warm charcoal — all white text stays visible ── */
 html.light {
-  color-scheme: light;
-  --color-background: hsl(220 20% 97%);
-  --color-foreground: hsl(220 15% 10%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(220 15% 10%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(220 15% 10%);
-  --color-primary: hsl(220 15% 10%);
-  --color-primary-foreground: hsl(220 20% 97%);
-  --color-secondary: hsl(220 15% 92%);
-  --color-secondary-foreground: hsl(220 15% 10%);
-  --color-muted: hsl(220 15% 92%);
-  --color-muted-foreground: hsl(220 10% 40%);
-  --color-accent: hsl(220 15% 92%);
-  --color-accent-foreground: hsl(220 15% 10%);
-  --color-border: hsl(220 15% 88%);
-  --color-input: hsl(220 15% 92%);
-  --glass-border: rgba(0,0,0,0.09);
-  --glass-bg: rgba(255,255,255,0.75);
-  --glass-card-bg: rgba(255,255,255,0.85);
-  --glass-card-border: rgba(0,0,0,0.09);
+  color-scheme: dark;
+  --color-background: hsl(220 18% 11%);
+  --color-foreground: hsl(0 0% 98%);
+  --color-card: hsl(220 18% 15%);
+  --color-card-foreground: hsl(0 0% 98%);
+  --color-popover: hsl(220 18% 13%);
+  --color-popover-foreground: hsl(0 0% 98%);
+  --color-primary: hsl(0 0% 98%);
+  --color-primary-foreground: hsl(220 18% 11%);
+  --color-secondary: hsl(220 18% 20%);
+  --color-secondary-foreground: hsl(0 0% 98%);
+  --color-muted: hsl(220 18% 22%);
+  --color-muted-foreground: hsl(220 10% 65%);
+  --color-accent: hsl(220 18% 20%);
+  --color-accent-foreground: hsl(0 0% 98%);
+  --color-border: hsl(220 18% 24%);
+  --color-input: hsl(220 18% 20%);
+  --glass-border: rgba(100,120,200,0.12);
+  --glass-bg: rgba(20,28,48,0.72);
+  --glass-card-bg: rgba(255,255,255,0.05);
+  --glass-card-border: rgba(100,120,200,0.14);
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-orange-500/20 selection:text-orange-300;
+    transition: background-color 0.35s ease, color 0.35s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -98,7 +98,7 @@ html.light {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-card-border);
-    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
   }
 
   .masonry-grid {
@@ -121,7 +121,6 @@ html.light {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Subtle card hover lift */
   .card-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }

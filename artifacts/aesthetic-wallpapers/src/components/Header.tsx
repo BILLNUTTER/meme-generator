@@ -68,7 +68,7 @@ export function Header() {
                   href={href}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
                     isActive(href)
-                      ? "bg-foreground/10 text-foreground"
+                      ? "bg-orange-500/15 text-orange-300 border border-orange-500/20"
                       : "text-foreground/50 hover:text-foreground hover:bg-foreground/5"
                   }`}
                 >
@@ -130,7 +130,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/register"
-                  className="text-sm font-semibold text-background bg-foreground px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+                  className="text-sm font-semibold text-white bg-orange-500 hover:bg-orange-400 px-4 py-1.5 rounded-lg transition-colors"
                 >
                   Join Free
                 </Link>
@@ -153,7 +153,7 @@ export function Header() {
                 href={href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive(href)
-                    ? "bg-foreground/10 text-foreground"
+                    ? "bg-orange-500/15 text-orange-300"
                     : "text-foreground/60 hover:text-foreground hover:bg-foreground/6"
                 }`}
               >

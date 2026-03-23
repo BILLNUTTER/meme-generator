@@ -155,7 +155,7 @@ export default function PesapalPayment() {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           >
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-violet-400 animate-spin mx-auto mb-4" />
+              <Loader2 className="w-12 h-12 text-orange-400 animate-spin mx-auto mb-4" />
               <p className="text-white font-semibold">Confirming your payment…</p>
               <p className="text-white/40 text-sm mt-1">Please wait</p>
             </div>
@@ -199,12 +199,12 @@ export default function PesapalPayment() {
                   <p className="text-white text-sm font-medium">Unlimited no-watermark TikTok downloads</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Sparkles className="w-5 h-5 text-violet-400 shrink-0" />
+                  <Sparkles className="w-5 h-5 text-orange-400 shrink-0" />
                   <p className="text-white text-sm font-medium">Valid for 30 days from today</p>
                 </div>
               </div>
               <Button
-                className="w-full bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-400 hover:to-pink-400 text-white rounded-xl py-3 font-semibold"
+                className="w-full bg-gradient-to-r from-orange-500 to-green-500 hover:from-orange-400 hover:to-green-400 text-white rounded-xl py-3 font-semibold"
                 onClick={() => setLocation("/tiktok-download")}
               >
                 Start Downloading TikToks
@@ -216,7 +216,7 @@ export default function PesapalPayment() {
           {(payState === "form" || payState === "failed") && (
             <>
               <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center mx-auto mb-5">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-green-500 flex items-center justify-center mx-auto mb-5">
                   <CreditCard className="w-7 h-7 text-white" />
                 </div>
                 <h1 className="font-display text-3xl text-white mb-2">Upgrade Your Plan</h1>
@@ -236,11 +236,11 @@ export default function PesapalPayment() {
                     value={email}
                     onChange={e => { setEmail(e.target.value); setError(null); }}
                     placeholder="your@email.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 transition"
                   />
                 </div>
 
-                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-4">
+                <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 px-5 py-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-white/60">Unlimited TikTok Downloads (1 month)</span>
                     <span className="text-white font-bold">Ksh 70</span>
@@ -265,7 +265,7 @@ export default function PesapalPayment() {
                 )}
 
                 <Button
-                  className="w-full bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-400 hover:to-pink-400 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-orange-500 to-green-500 hover:from-orange-400 hover:to-green-400 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-50"
                   disabled={loading || !email.trim()}
                   onClick={handlePay}
                 >

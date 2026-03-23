@@ -58,16 +58,16 @@ export default function Home() {
 
       {/* ── HERO ──────────────────────────────────────────────── */}
       <section className="relative text-center max-w-5xl mx-auto px-4 sm:px-6 pt-16 pb-20">
-        <div className="absolute inset-0 -z-10 blur-[120px] opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at 50% 0%, #7c3aed 0%, transparent 70%)" }} />
+        <div className="absolute inset-0 -z-10 blur-[120px] opacity-25 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 50% 0%, #f97316 0%, transparent 70%)" }} />
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-violet-400 bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 rounded-full mb-6">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 px-4 py-1.5 rounded-full mb-6">
             Your aesthetic content hub
           </span>
           <h1 className="font-display text-5xl md:text-6xl lg:text-7xl text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/40 leading-tight mb-8">
             Wallpapers · Memes<br />
-            <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-400 via-green-400 to-blue-400 bg-clip-text text-transparent">
               &amp; TikToks
             </span>
           </h1>
@@ -87,7 +87,7 @@ export default function Home() {
             { icon: Download,  label: "Free downloads after signup" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/70">
-              <Icon className="w-3.5 h-3.5 text-violet-400" />
+              <Icon className="w-3.5 h-3.5 text-orange-400" />
               {label}
             </div>
           ))}
@@ -226,7 +226,7 @@ export default function Home() {
         {/* ── How to use ──────────────────────────────────────── */}
         <section className="mb-24">
           <div className="text-center mb-12">
-            <span className="text-xs uppercase tracking-widest text-violet-400 font-semibold">Simple steps</span>
+            <span className="text-xs uppercase tracking-widest text-orange-400 font-semibold">Simple steps</span>
             <h2 className="font-display text-4xl mt-3 text-white">How it works</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -250,10 +250,10 @@ export default function Home() {
                 desc: "Got a TikTok you love? Paste the link in the TikTok Link tool and download it watermark-free — 3 free per month, or upgrade for unlimited.",
               },
             ].map(({ step, icon: Icon, title, desc }) => (
-              <div key={step} className="relative rounded-2xl border border-white/8 bg-white/[0.03] p-8 group hover:border-violet-500/30 hover:bg-white/[0.05] transition-all duration-300">
+              <div key={step} className="relative rounded-2xl border border-white/8 bg-white/[0.03] p-8 group hover:border-orange-500/30 hover:bg-white/[0.05] transition-all duration-300">
                 <div className="text-5xl font-display text-white/5 absolute top-6 right-6">{step}</div>
-                <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-5">
-                  <Icon className="w-5 h-5 text-violet-400" />
+                <div className="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-5">
+                  <Icon className="w-5 h-5 text-orange-400" />
                 </div>
                 <h3 className="font-display text-lg text-white mb-3">{title}</h3>
                 <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
@@ -265,7 +265,7 @@ export default function Home() {
         {/* ── Why choose us ───────────────────────────────────── */}
         <section className="mb-24">
           <div className="text-center mb-12">
-            <span className="text-xs uppercase tracking-widest text-pink-400 font-semibold">Reasons to join</span>
+            <span className="text-xs uppercase tracking-widest text-blue-400 font-semibold">Reasons to join</span>
             <h2 className="font-display text-4xl mt-3 text-white">Why choose Aesthetic?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -274,9 +274,9 @@ export default function Home() {
                 icon: Video,
                 title: "TikTok without watermarks",
                 desc: "Download any TikTok video in HD without the distracting TikTok watermark logo.",
-                color: "from-pink-500/20 to-rose-500/5",
-                border: "border-pink-500/20",
-                iconColor: "text-pink-400",
+                color: "from-orange-500/20 to-amber-500/5",
+                border: "border-orange-500/20",
+                iconColor: "text-orange-400",
               },
               {
                 icon: Smile,
@@ -314,8 +314,8 @@ export default function Home() {
 
         {/* ── Pricing teaser ──────────────────────────────────── */}
         <section className="mb-24">
-          <div className="rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-pink-500/5 to-transparent p-10 text-center max-w-3xl mx-auto">
-            <Zap className="w-10 h-10 text-violet-400 mx-auto mb-5" />
+          <div className="rounded-3xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 via-green-500/5 to-transparent p-10 text-center max-w-3xl mx-auto">
+            <Zap className="w-10 h-10 text-orange-400 mx-auto mb-5" />
             <h2 className="font-display text-3xl text-white mb-4">Upgrade for unlimited TikTok downloads</h2>
             <p className="text-white/55 text-sm leading-relaxed mb-8 max-w-lg mx-auto">
               Free users get 3 no-watermark TikTok downloads per month. Upgrade to unlimited downloads

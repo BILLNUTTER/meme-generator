@@ -138,7 +138,7 @@ export default function TikTokView() {
                     href={data.tiktokUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-pink-400 hover:text-pink-300 text-sm transition-colors"
+                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm transition-colors"
                   >
                     Open on TikTok <ExternalLink className="w-3.5 h-3.5" />
                   </a>
@@ -168,8 +168,8 @@ export default function TikTokView() {
         <div className="w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-white/5 bg-zinc-950 flex flex-col p-6 gap-6">
 
           <div className="mt-2 md:mt-10">
-            <span className="inline-flex items-center gap-1.5 text-pink-400 text-xs font-semibold uppercase tracking-wider mb-3">
-              <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse" /> TikTok
+            <span className="inline-flex items-center gap-1.5 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
+              <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" /> TikTok
             </span>
             <h1 className="font-display text-2xl text-white leading-snug">
               {data?.title || "TikTok Video"}
@@ -179,7 +179,7 @@ export default function TikTokView() {
           <div className="space-y-3">
             {/* Download no-watermark */}
             <Button
-              className="w-full gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-semibold py-5 text-sm rounded-xl shadow-lg shadow-pink-500/20"
+              className="w-full gap-2 bg-gradient-to-r from-orange-500 to-blue-500 hover:from-orange-400 hover:to-blue-400 text-white font-semibold py-5 text-sm rounded-xl shadow-lg shadow-orange-500/20"
               disabled={!videoUrl || isLoading}
               onClick={() => {
                 if (videoUrl && data) {

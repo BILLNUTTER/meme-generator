@@ -53,8 +53,8 @@ export function TikToksPage() {
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
-              <Music className="w-5 h-5 text-pink-400" />
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <Music className="w-5 h-5 text-blue-400" />
             </div>
             <h1 className="font-display text-4xl sm:text-5xl text-white">TikTok Gallery</h1>
           </div>

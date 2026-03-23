@@ -158,11 +158,11 @@ export function TikTokDownloadPage() {
 
         {/* Hero */}
         <div className="mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-4">
             <Zap className="w-3 h-3" /> Watermark-free · HD quality
           </div>
           <h1 className="font-display text-4xl sm:text-6xl text-white mb-3">
-            TikTok <span className="italic text-pink-400">Downloader</span>
+            TikTok <span className="italic text-blue-400">Downloader</span>
           </h1>
           <p className="text-white/40 text-lg">
             Paste any TikTok link below and download the original video with no watermark.
@@ -184,7 +184,7 @@ export function TikTokDownloadPage() {
         )}
         {!subLoading && tiktokPaidMode && (
           tiktokActive ? (
-            <div className="flex items-center gap-3 rounded-2xl p-4 mb-8 border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-violet-500/10">
+            <div className="flex items-center gap-3 rounded-2xl p-4 mb-8 border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
               <div className="w-8 h-8 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
                 <Crown className="w-4 h-4 text-yellow-400" />
               </div>
@@ -231,7 +231,7 @@ export function TikTokDownloadPage() {
               {exhausted && (
                 <Button
                   size="sm"
-                  className="shrink-0 bg-gradient-to-r from-violet-600 to-pink-600 border-0 text-white text-xs"
+                  className="shrink-0 bg-gradient-to-r from-orange-500 to-green-500 border-0 text-white text-xs"
                   onClick={() => setLocation("/pay")}
                 >
                   Upgrade Ksh 70
@@ -260,7 +260,7 @@ export function TikTokDownloadPage() {
             <Button
               onClick={handleFetch}
               disabled={!url.trim() || exhausted || isLoading}
-              className="shrink-0 bg-pink-600 hover:bg-pink-500 min-w-[100px]"
+              className="shrink-0 bg-orange-500 hover:bg-orange-400 min-w-[100px]"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch Video"}
             </Button>
@@ -311,7 +311,7 @@ export function TikTokDownloadPage() {
             {isDownloading && dlProgress > 0 && (
               <div className="px-4 pb-4">
                 <div className="h-1 rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-pink-400 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
+                  <div className="h-full rounded-full bg-orange-400 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
                 </div>
               </div>
             )}
