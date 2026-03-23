@@ -47,24 +47,26 @@
   --glass-bg: rgba(255, 255, 255, 0.82);
   --glass-card-bg: rgba(255, 255, 255, 0.92);
   --glass-card-border: rgba(0, 0, 0, 0.07);
-  /* Dark equivalents for legacy hardcoded text-white classes */
-  --lt:    hsl(220 15% 10%);
-  --lt-90: rgba(14, 18, 28, 0.9);
-  --lt-80: rgba(14, 18, 28, 0.8);
-  --lt-70: rgba(14, 18, 28, 0.7);
-  --lt-65: rgba(14, 18, 28, 0.65);
-  --lt-60: rgba(14, 18, 28, 0.6);
-  --lt-55: rgba(14, 18, 28, 0.55);
-  --lt-50: rgba(14, 18, 28, 0.5);
-  --lt-45: rgba(14, 18, 28, 0.45);
-  --lt-40: rgba(14, 18, 28, 0.4);
-  --lt-35: rgba(14, 18, 28, 0.35);
-  --lt-30: rgba(14, 18, 28, 0.3);
-  --lt-25: rgba(14, 18, 28, 0.25);
-  --lt-20: rgba(14, 18, 28, 0.2);
-  --lt-15: rgba(14, 18, 28, 0.15);
-  --lt-10: rgba(14, 18, 28, 0.1);
-  --lt-05: rgba(14, 18, 28, 0.05);
+  /* Dark equivalents for legacy hardcoded text-white classes.
+     Opacities are scaled UP so even "dim" white text reads clearly
+     on a light background (e.g. text-white/30 → 55% dark). */
+  --lt:    hsl(220 15% 8%);
+  --lt-90: rgba(14, 18, 28, 0.95);
+  --lt-80: rgba(14, 18, 28, 0.9);
+  --lt-70: rgba(14, 18, 28, 0.86);
+  --lt-65: rgba(14, 18, 28, 0.82);
+  --lt-60: rgba(14, 18, 28, 0.78);
+  --lt-55: rgba(14, 18, 28, 0.74);
+  --lt-50: rgba(14, 18, 28, 0.70);
+  --lt-45: rgba(14, 18, 28, 0.66);
+  --lt-40: rgba(14, 18, 28, 0.62);
+  --lt-35: rgba(14, 18, 28, 0.58);
+  --lt-30: rgba(14, 18, 28, 0.55);
+  --lt-25: rgba(14, 18, 28, 0.50);
+  --lt-20: rgba(14, 18, 28, 0.42);
+  --lt-15: rgba(14, 18, 28, 0.34);
+  --lt-10: rgba(14, 18, 28, 0.25);
+  --lt-05: rgba(14, 18, 28, 0.14);
 }
 
 @layer base {

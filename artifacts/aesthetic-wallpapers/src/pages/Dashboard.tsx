@@ -179,10 +179,10 @@ export function Dashboard() {
 
       {isDownloading && dlProgress > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl min-w-[220px]">
-          <div className="w-32 h-1.5 rounded-full bg-white/10">
+          <div className="w-32 h-1.5 rounded-full bg-foreground/15">
             <div className="h-full rounded-full bg-orange-400 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
           </div>
-          <span className="text-xs text-white/60">{dlProgress}%</span>
+          <span className="text-xs text-foreground/70 font-semibold">{dlProgress}%</span>
         </div>
       )}
 
@@ -199,7 +199,7 @@ export function Dashboard() {
               <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
             </a>
             <button onClick={() => { logout(); setLocation("/"); }}
-              className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors px-3 py-2 rounded-xl border border-white/5">
+              className="flex items-center gap-1.5 text-xs text-foreground/55 hover:text-foreground transition-colors px-3 py-2 rounded-xl border border-foreground/10">
               <LogOut className="w-3.5 h-3.5" /> Sign out
             </button>
           </div>
@@ -279,17 +279,17 @@ export function Dashboard() {
             <p className="text-xs font-medium text-white/30 uppercase tracking-widest">Services</p>
             <div className="flex items-center gap-2">
               <button onClick={() => scrollTo(activeSlide - 1)}
-                className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all">
+                className="w-7 h-7 rounded-full border border-foreground/15 flex items-center justify-center text-foreground/50 hover:text-foreground hover:border-foreground/40 transition-all">
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <div className="flex gap-1">
                 {SERVICES.map((_, i) => (
                   <button key={i} onClick={() => scrollTo(i)}
-                    className={cn("h-1.5 rounded-full transition-all duration-300", activeSlide === i ? "bg-white w-4" : "bg-white/20 w-1.5")} />
+                    className={cn("h-1.5 rounded-full transition-all duration-300", activeSlide === i ? "bg-orange-500 w-4" : "bg-foreground/20 w-1.5")} />
                 ))}
               </div>
               <button onClick={() => scrollTo(activeSlide + 1)}
-                className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 transition-all">
+                className="w-7 h-7 rounded-full border border-foreground/15 flex items-center justify-center text-foreground/50 hover:text-foreground hover:border-foreground/40 transition-all">
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -320,7 +320,7 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-display text-2xl text-white">Today's Picks</h2>
-            <button onClick={() => setLocation("/wallpapers")} className="text-xs text-white/40 hover:text-white transition-colors">View all →</button>
+            <button onClick={() => setLocation("/wallpapers")} className="text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors">View all →</button>
           </div>
           {picksLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
