@@ -133,25 +133,20 @@ export function MemeMakerPage() {
             </div>
           </div>
 
-          {/* Live preview — small, right after textarea */}
+          {/* Live preview — matches the generated image exactly */}
           {text.trim() && !previewUrl && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-xl overflow-hidden bg-[#080808] border border-white/10"
-              style={{ aspectRatio: "1", maxHeight: "220px" }}
+              style={{ aspectRatio: "1", maxHeight: "260px" }}
             >
-              <div className="w-full h-full flex items-center justify-start px-3 py-3">
+              <div className="w-full h-full flex items-start justify-start px-[3.7%] py-[5.5%]">
                 <p
-                  className="text-white text-left leading-tight w-full"
+                  className="text-white text-left w-full"
                   style={{
-                    fontSize:
-                      text.length > 120 ? "clamp(9px, 1.8vw, 11px)" :
-                      text.length > 70  ? "clamp(11px, 2.4vw, 14px)" :
-                      text.length > 40  ? "clamp(14px, 3vw, 18px)" :
-                      text.length > 20  ? "clamp(18px, 3.8vw, 22px)" :
-                      text.length > 10  ? "clamp(22px, 4.5vw, 30px)" :
-                                          "clamp(28px, 5.5vw, 40px)",
+                    fontSize: "3.24%",
+                    lineHeight: "1.4",
                     fontFamily: "Impact, 'Arial Black', sans-serif",
                     overflowWrap: "break-word",
                     wordBreak: "break-word",
