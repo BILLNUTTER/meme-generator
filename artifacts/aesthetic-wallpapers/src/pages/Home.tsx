@@ -283,14 +283,13 @@ export default function Home() {
 
         {/* ── SOCIAL COMMUNITY SPOTLIGHT ── */}
         <section className="mb-20">
-          <div className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50 p-8 sm:p-12 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-violet-200/30 blur-3xl pointer-events-none" />
+          <div className="rounded-3xl card-live-1 overflow-hidden p-8 sm:p-12 relative">
             <div className="relative max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-100 border border-violet-200 text-violet-600 text-xs font-bold uppercase tracking-wider mb-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 border border-white/30 text-white text-xs font-bold uppercase tracking-wider mb-5">
                 <TrendingUp className="w-3 h-3" /> Social Boost Feature
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl text-foreground mb-4">Connect with the community</h2>
-              <p className="text-foreground/65 text-base font-medium leading-relaxed mb-6">
+              <h2 className="font-display text-3xl sm:text-4xl text-white mb-4">Connect with the community</h2>
+              <p className="text-white/85 text-base font-medium leading-relaxed mb-6">
                 Add your Instagram, TikTok, YouTube, Twitter and 9 other platforms to your profile.
                 Browse fellow creators, tap to view their accounts, and grow your following — all inside the app.
               </p>
@@ -301,13 +300,13 @@ export default function Home() {
                   "Tap a member card to open their profile in-app",
                   "Mark members as followed — they disappear from your feed",
                 ].map(f => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-foreground/75 font-medium">
-                    <Check className="w-4 h-4 text-violet-500 shrink-0" /> {f}
+                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/90 font-medium">
+                    <Check className="w-4 h-4 text-white shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
               <Link href={isLoggedIn ? "/dashboard" : "/register"}>
-                <Button className="bg-violet-500 hover:bg-violet-600 text-white rounded-full px-8 font-bold gap-2">
+                <Button className="bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded-full px-8 font-bold gap-2">
                   {isLoggedIn ? "Go to Dashboard" : "Join Free"} <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -326,14 +325,14 @@ export default function Home() {
               { step: "01", icon: Sparkles,   title: "Create a free account",   desc: "Sign up in seconds — no credit card. Just your name, email and password." },
               { step: "02", icon: Download,   title: "Browse & download",       desc: "Explore wallpapers, memes and TikTok videos. One tap downloads anything." },
               { step: "03", icon: Users,      title: "Share & connect",         desc: "Add your social links. Discover other members. Grow your following." },
-            ].map(({ step, icon: Icon, title, desc }) => (
-              <div key={step} className="relative rounded-2xl border border-foreground/10 bg-white p-8 shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-5xl font-display text-orange-100 absolute top-6 right-6">{step}</div>
-                <div className="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center mb-5">
-                  <Icon className="w-5 h-5 text-orange-500" />
+            ].map(({ step, icon: Icon, title, desc }, i) => (
+              <div key={step} className={`relative rounded-2xl overflow-hidden p-8 card-live-${i}`}>
+                <div className="text-5xl font-display text-white/20 absolute top-6 right-6">{step}</div>
+                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mb-5">
+                  <Icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="font-display text-lg text-foreground mb-3">{title}</h3>
-                <p className="text-foreground/60 text-sm leading-relaxed font-medium">{desc}</p>
+                <h3 className="font-display text-lg text-white mb-3">{title}</h3>
+                <p className="text-white/80 text-sm leading-relaxed font-medium">{desc}</p>
               </div>
             ))}
           </div>
@@ -346,11 +345,11 @@ export default function Home() {
             <h2 className="font-display text-4xl text-foreground">Why choose AESTHETICS?</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {WHY.map(({ icon: Icon, title, desc, color, ic }) => (
-              <div key={title} className={cn("rounded-2xl border p-6 hover:-translate-y-1 transition-transform duration-300 shadow-sm", color)}>
-                <Icon className={cn("w-8 h-8 mb-4", ic)} />
-                <h3 className="font-display text-foreground text-lg mb-2">{title}</h3>
-                <p className="text-foreground/60 text-xs leading-relaxed font-medium">{desc}</p>
+            {WHY.map(({ icon: Icon, title, desc }, i) => (
+              <div key={title} className={`rounded-2xl overflow-hidden p-6 hover:-translate-y-1 transition-transform duration-300 card-live-${i}`}>
+                <Icon className="w-8 h-8 mb-4 text-white" />
+                <h3 className="font-display text-white text-lg mb-2">{title}</h3>
+                <p className="text-white/75 text-xs leading-relaxed font-medium">{desc}</p>
               </div>
             ))}
           </div>
@@ -358,31 +357,31 @@ export default function Home() {
 
         {/* ── PRICING TEASER ── */}
         <section className="mb-4">
-          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-amber-50 to-white p-10 text-center max-w-3xl mx-auto shadow-sm">
-            <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <Crown className="w-7 h-7 text-orange-500" />
+          <div className="rounded-3xl card-live-3 overflow-hidden p-10 text-center max-w-3xl mx-auto">
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <Crown className="w-7 h-7 text-white" />
             </div>
-            <h2 className="font-display text-3xl text-foreground mb-4">Upgrade for unlimited TikTok downloads</h2>
-            <p className="text-foreground/65 text-sm leading-relaxed mb-8 max-w-lg mx-auto font-medium">
+            <h2 className="font-display text-3xl text-white mb-4">Upgrade for unlimited TikTok downloads</h2>
+            <p className="text-white/85 text-sm leading-relaxed mb-8 max-w-lg mx-auto font-medium">
               Free users get 10 watermark-free TikTok downloads/month. Upgrade to unlimited for just{" "}
-              <span className="text-orange-600 font-bold">Ksh 70/month</span>.
+              <span className="text-white font-bold underline decoration-white/50">Ksh 70/month</span>.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
               {["10 free TikTok downloads/month", "Unlimited wallpaper downloads", "Free meme maker — forever", "Social community — always free"].map(f => (
-                <div key={f} className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-orange-100 text-sm text-foreground/70 font-medium">
-                  <Check className="w-4 h-4 text-green-500 shrink-0" /> {f}
+                <div key={f} className="flex flex-col items-center gap-2 p-3 bg-white/15 rounded-xl border border-white/25 text-sm text-white/90 font-medium">
+                  <Check className="w-4 h-4 text-white shrink-0" /> {f}
                 </div>
               ))}
             </div>
             {!isLoggedIn ? (
               <Link href="/register">
-                <Button size="lg" className="rounded-full px-10 bg-orange-500 hover:bg-orange-400 text-white font-bold">
+                <Button size="lg" className="rounded-full px-10 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold">
                   Join Free — Start Today
                 </Button>
               </Link>
             ) : (
               <Link href="/pay">
-                <Button size="lg" className="rounded-full px-10 bg-orange-500 hover:bg-orange-400 text-white font-bold">
+                <Button size="lg" className="rounded-full px-10 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold">
                   Upgrade — Ksh 70/month
                 </Button>
               </Link>

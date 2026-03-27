@@ -67,6 +67,8 @@ function App() {
             <Router />
           </WouterRouter>
           <Toaster />
+          {/* Global snake-lights page border — visible on every page */}
+          <div className="page-snake-border" />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

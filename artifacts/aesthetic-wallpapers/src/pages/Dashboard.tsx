@@ -497,17 +497,17 @@ export function Dashboard() {
 
         {/* ── TikTok Downloader ── */}
         <div className="mb-10">
-          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-6 sm:p-8">
+          <div className="rounded-3xl card-live overflow-hidden p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 border border-orange-200 text-orange-600 text-xs font-bold mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-xs font-bold mb-3">
                   <Zap className="w-3 h-3" /> Watermark-free
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl text-foreground mb-1">TikTok Downloader</h2>
-                <p className="text-foreground/60 text-sm font-medium">Paste any TikTok link — download original HD video, no watermark.</p>
+                <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">TikTok Downloader</h2>
+                <p className="text-white/80 text-sm font-medium">Paste any TikTok link — download original HD video, no watermark.</p>
               </div>
               <button onClick={() => setLocation("/tiktok-download")}
-                className="shrink-0 text-xs font-bold text-orange-600 hover:text-orange-700 border border-orange-200 bg-white px-4 py-2 rounded-xl transition-colors">
+                className="shrink-0 text-xs font-bold text-white border border-white/30 bg-white/15 px-4 py-2 rounded-xl transition-colors hover:bg-white/25">
                 Full page →
               </button>
             </div>
@@ -578,14 +578,14 @@ export function Dashboard() {
 
         {/* ── SOCIAL LINKS ── */}
         <div className="mb-10" ref={socialLinksRef} id="social-links">
-          <div className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50 p-6 sm:p-8">
+          <div className="rounded-3xl card-live-1 overflow-hidden p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5 text-violet-600" />
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="font-display text-2xl text-foreground">Social Links</h2>
-                <p className="text-foreground/60 text-sm font-medium">Share your profiles — others can find and follow you</p>
+                <h2 className="font-display text-2xl text-white">Social Links</h2>
+                <p className="text-white/80 text-sm font-medium">Share your profiles — others can find and follow you</p>
               </div>
             </div>
 
@@ -636,17 +636,17 @@ export function Dashboard() {
 
         {/* ── Meme Maker ── */}
         <div className="mb-10">
-          <div className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 sm:p-8">
+          <div className="rounded-3xl card-live-2 overflow-hidden p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 border border-green-200 text-green-700 text-xs font-bold mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-xs font-bold mb-3">
                   <CheckCircle2 className="w-3 h-3" /> Always free · No limits
                 </div>
-                <h2 className="font-display text-2xl sm:text-3xl text-foreground mb-2">Meme Maker</h2>
-                <p className="text-foreground/60 text-sm font-medium max-w-lg">Create custom memes — Impact font, 1080×800. Download instantly, completely free.</p>
+                <h2 className="font-display text-2xl sm:text-3xl text-white mb-2">Meme Maker</h2>
+                <p className="text-white/80 text-sm font-medium max-w-lg">Create custom memes — Impact font, 1080×800. Download instantly, completely free.</p>
               </div>
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setLocation("/meme-maker")}
-                className="shrink-0 flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-bold text-sm px-6 py-3 rounded-2xl transition-colors">
+                className="shrink-0 flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold text-sm px-6 py-3 rounded-2xl border border-white/30 transition-colors">
                 <Wand2 className="w-4 h-4" /> Create Meme
               </motion.button>
             </div>
