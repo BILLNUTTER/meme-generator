@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import {
-  ImageIcon, Music, Download, Laugh, Wand2, ChevronLeft, ChevronRight,
-  Link2, Loader2, AlertCircle, Zap, Sparkles, Crown, LogOut, MessageCircle,
-  CheckCircle2, CalendarDays,
+  ImageIcon, Music, Download, Laugh, Wand2,
+  Link2, Loader2, AlertCircle, Zap, Crown, LogOut, MessageCircle,
+  CheckCircle2, CalendarDays, Plus, Trash2, Globe, Instagram,
+  Youtube, Facebook, Twitter, Users, ExternalLink,
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -12,7 +13,7 @@ import { ContentViewer } from "@/components/ContentViewer";
 import { AppInstallPrompt } from "@/components/AppInstallPrompt";
 import { useUserAuth } from "@/hooks/use-user-auth";
 import { useGetDashboardImages } from "@workspace/api-client-react";
-import type { Image } from "@workspace/api-client-react/src/generated/api.schemas";
+type Image = { id: string; url: string; title?: string | null; category: string; type: string; thumbnail?: string | null; destination: string; tiktokUrl?: string | null; createdAt: string; };
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -36,23 +37,38 @@ function fmtExpiry(iso: string) {
   return new Date(iso).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 }
 
+const PLATFORMS = [
+  "Instagram","TikTok","Twitter/X","YouTube","Facebook",
+  "Snapchat","Pinterest","LinkedIn","WhatsApp","Telegram","Threads","BeReal","Other",
+];
+const PLATFORM_ICONS: Record<string, React.ElementType> = {
+  Instagram, TikTok: Music, "Twitter/X": Twitter, YouTube: Youtube,
+  Facebook, WhatsApp: MessageCircle, Telegram: MessageCircle,
+};
+function PlatformIcon({ platform }: { platform: string }) {
+  const Icon = PLATFORM_ICONS[platform] ?? Globe;
+  return <Icon className="w-4 h-4" />;
+}
+
+interface SocialLink { id: string; platform: string; url: string; username?: string; created_at: string; }
+interface CommunityLink extends SocialLink { user_name: string; }
+
 const SERVICES = [
-  { id: "wallpapers",      label: "Wallpapers",      desc: "Browse aesthetic collections",  icon: ImageIcon, color: "from-blue-600/30 to-cyan-600/20",     border: "border-blue-500/20",   accent: "text-blue-400",   href: "/wallpapers"      },
-  { id: "tiktoks",         label: "TikTok Gallery",  desc: "Watch curated videos",          icon: Music,     color: "from-blue-600/30 to-cyan-600/20",      border: "border-blue-500/20",   accent: "text-blue-400",   href: "/tiktoks"         },
-  { id: "tiktok-download", label: "TikTok Download", desc: "No watermark · HD quality",     icon: Download,  color: "from-orange-600/30 to-amber-600/20",  border: "border-orange-500/20", accent: "text-orange-400", href: "/tiktok-download" },
-  { id: "memes",           label: "Meme Gallery",    desc: "Browse fresh memes daily",      icon: Laugh,     color: "from-yellow-600/30 to-amber-600/20",   border: "border-yellow-500/20", accent: "text-yellow-400", href: "/memes"           },
-  { id: "meme-maker",      label: "Meme Maker",      desc: "Create your own — always free", icon: Wand2,     color: "from-green-600/30 to-emerald-600/20",  border: "border-green-500/20",  accent: "text-green-400",  href: "/meme-maker"      },
+  { id: "wallpapers", label: "Wallpapers", desc: "Browse aesthetic collections", icon: ImageIcon, color: "from-blue-100 to-cyan-50", border: "border-blue-200", iconBg: "bg-blue-100", accent: "text-blue-600", href: "/wallpapers" },
+  { id: "tiktoks", label: "TikTok Gallery", desc: "Watch curated videos", icon: Music, color: "from-pink-100 to-rose-50", border: "border-pink-200", iconBg: "bg-pink-100", accent: "text-pink-600", href: "/tiktoks" },
+  { id: "tiktok-download", label: "TikTok Download", desc: "No watermark · HD quality", icon: Download, color: "from-orange-100 to-amber-50", border: "border-orange-200", iconBg: "bg-orange-100", accent: "text-orange-600", href: "/tiktok-download" },
+  { id: "memes", label: "Meme Gallery", desc: "Browse fresh memes daily", icon: Laugh, color: "from-yellow-100 to-amber-50", border: "border-yellow-200", iconBg: "bg-yellow-100", accent: "text-yellow-600", href: "/memes" },
+  { id: "meme-maker", label: "Meme Maker", desc: "Create your own — always free", icon: Wand2, color: "from-green-100 to-emerald-50", border: "border-green-200", iconBg: "bg-green-100", accent: "text-green-600", href: "/meme-maker" },
 ];
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { isReady, isAuthenticated, user, logout } = useUserAuth();
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [activeSlide, setActiveSlide] = useState(0);
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
   const [viewerItems, setViewerItems] = useState<Image[]>([]);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
+  // TikTok downloader
   const [tkUrl, setTkUrl] = useState("");
   const [tkLoading, setTkLoading] = useState(false);
   const [tkResult, setTkResult] = useState<{ downloadUrl: string; title: string; thumbnail: string } | null>(null);
@@ -61,21 +77,31 @@ export function Dashboard() {
   const [dlProgress, setDlProgress] = useState<number>(0);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Subscription state from server
+  // Subscription
   const [tiktokActive, setTiktokActive] = useState(false);
   const [tiktokExpiry, setTiktokExpiry] = useState<string | null>(null);
   const [subLoading, setSubLoading] = useState(true);
   const [tiktokPaidMode, setTiktokPaidMode] = useState(false);
 
+  // Social links
+  const [myLinks, setMyLinks] = useState<SocialLink[]>([]);
+  const [communityLinks, setCommunityLinks] = useState<CommunityLink[]>([]);
+  const [newPlatform, setNewPlatform] = useState(PLATFORMS[0]);
+  const [newUrl, setNewUrl] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [socialTab, setSocialTab] = useState<"mine" | "community">("mine");
+
+  const token = localStorage.getItem("userToken");
+
   useEffect(() => {
     if (isReady && !isAuthenticated) setLocation("/login");
   }, [isReady, isAuthenticated, setLocation]);
 
-  const token = localStorage.getItem("userToken");
-
-  // Fetch subscription status once authenticated
   useEffect(() => {
     if (!isAuthenticated || !token) return;
+    // Fetch user profile + settings
     fetch(`${baseUrl}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then((d: { tiktokActive?: boolean; tiktokExpiry?: string | null }) => {
@@ -88,31 +114,21 @@ export function Dashboard() {
       .then(r => r.json())
       .then((d: { tiktokPaidMode?: boolean }) => setTiktokPaidMode(!!d.tiktokPaidMode))
       .catch(() => {});
+    // Fetch social links
+    fetch(`${baseUrl}/api/social-links`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(setMyLinks).catch(() => {});
+    fetch(`${baseUrl}/api/community/social-links`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(setCommunityLinks).catch(() => {});
   }, [isAuthenticated, token, baseUrl]);
 
   const { data, isLoading: picksLoading } = useGetDashboardImages(undefined, {
     request: { headers: { Authorization: `Bearer ${token}` } },
-    query: {
-      enabled: isAuthenticated && !!token,
-      staleTime: 5 * 60 * 1000,
-    },
-  });
-
-  const allImages = data ?? [];
-  // Latest 4 picks — API returns newest first
-  const picks = allImages.slice(0, 4);
+    query: { enabled: isAuthenticated && !!token, staleTime: 5 * 60 * 1000, queryKey: ["dashboard-images"] },
+  } as any);
+  const picks = (data ?? []).slice(0, 8);
 
   const remaining = Math.max(0, FREE_LIMIT - quota.count);
   const exhausted = tiktokPaidMode && !tiktokActive && remaining <= 0;
-
-  const scrollTo = (idx: number) => {
-    const clamped = Math.max(0, Math.min(SERVICES.length - 1, idx));
-    const el = sliderRef.current;
-    if (!el) return;
-    const card = el.children[clamped] as HTMLElement;
-    if (card) card.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    setActiveSlide(clamped);
-  };
 
   const handleTkFetch = async () => {
     if (!tkUrl.trim() || exhausted) return;
@@ -127,9 +143,7 @@ export function Dashboard() {
       if (d.downloadUrl) {
         setTkResult({ downloadUrl: d.downloadUrl, title: d.title ?? "TikTok", thumbnail: d.thumbnail ?? "" });
         setQuota(incrementQuota());
-      } else {
-        setTkError(d.error ?? "Could not fetch this TikTok. Please check the link.");
-      }
+      } else { setTkError(d.error ?? "Could not fetch this TikTok."); }
     } catch { setTkError("Network error. Please try again."); }
     finally { setTkLoading(false); }
   };
@@ -152,11 +166,38 @@ export function Dashboard() {
         chunks.push(value); received += value.length;
         if (len > 0) setDlProgress(Math.round((received / len) * 100));
       }
-      const blob = new Blob(chunks, { type: "video/mp4" });
+      const blob = new Blob(chunks as BlobPart[], { type: "video/mp4" });
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
       a.download = `${tkResult.title.slice(0, 40)}.mp4`; a.click();
     } catch { setTkError("Download failed. Try again."); }
     finally { setIsDownloading(false); setDlProgress(0); }
+  };
+
+  const handleAddLink = async () => {
+    if (!newUrl.trim()) { setLinkError("Please enter a URL"); return; }
+    setLinkSaving(true); setLinkError(null);
+    try {
+      const resp = await fetch(`${baseUrl}/api/social-links`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ platform: newPlatform, url: newUrl.trim(), username: newUsername.trim() || undefined }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { setLinkError(data.error ?? "Failed to save"); return; }
+      setMyLinks(prev => {
+        const filtered = prev.filter(l => l.platform !== newPlatform);
+        return [...filtered, data];
+      });
+      setNewUrl(""); setNewUsername("");
+    } catch { setLinkError("Network error"); }
+    finally { setLinkSaving(false); }
+  };
+
+  const handleDeleteLink = async (id: string) => {
+    await fetch(`${baseUrl}/api/social-links/${id}`, {
+      method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+    });
+    setMyLinks(prev => prev.filter(l => l.id !== id));
   };
 
   if (!isReady || !isAuthenticated) return null;
@@ -164,108 +205,97 @@ export function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col pt-16 bg-background">
       <Header />
-
       <AppInstallPrompt />
 
       {viewerIndex !== null && viewerItems.length > 0 && (
-        <ContentViewer
-          items={viewerItems}
-          startIndex={viewerIndex}
-          onClose={() => setViewerIndex(null)}
-          baseUrl={baseUrl}
-          token={token}
-        />
+        <ContentViewer items={viewerItems} startIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)} baseUrl={baseUrl} token={token} />
       )}
 
       {isDownloading && dlProgress > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl min-w-[220px]">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-foreground/15 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-xl min-w-[220px]">
           <div className="w-32 h-1.5 rounded-full bg-foreground/15">
-            <div className="h-full rounded-full bg-orange-400 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
+            <div className="h-full rounded-full bg-orange-500 transition-all duration-300" style={{ width: `${dlProgress}%` }} />
           </div>
-          <span className="text-xs text-foreground/70 font-semibold">{dlProgress}%</span>
+          <span className="text-xs text-foreground/70 font-bold">{dlProgress}%</span>
         </div>
       )}
 
-      <main className="flex-1">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+
         {/* ── Welcome bar ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 flex items-center justify-between">
+        <div className="pt-10 pb-6 flex items-center justify-between">
           <div>
-            <p className="text-white/30 text-sm">Welcome back</p>
-            <h1 className="font-display text-3xl text-white">{user?.name ?? "Member"}</h1>
+            <p className="text-foreground/55 text-sm font-semibold">Welcome back</p>
+            <h1 className="font-display text-3xl text-foreground">{user?.name ?? "Member"}</h1>
           </div>
           <div className="flex items-center gap-2">
             <a href="https://whatsapp.com/channel/0029Vb6rOQtEAKW7qpF7w50d" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-green-500/70 hover:text-green-400 transition-colors px-3 py-2 rounded-xl border border-white/5 bg-white/[0.02]">
+              className="flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-700 transition-colors px-3 py-2 rounded-xl border border-green-200 bg-green-50">
               <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
             </a>
             <button onClick={() => { logout(); setLocation("/"); }}
-              className="flex items-center gap-1.5 text-xs text-foreground/55 hover:text-foreground transition-colors px-3 py-2 rounded-xl border border-foreground/10">
+              className="flex items-center gap-1.5 text-xs font-semibold text-foreground/55 hover:text-foreground transition-colors px-3 py-2 rounded-xl border border-foreground/10">
               <LogOut className="w-3.5 h-3.5" /> Sign out
             </button>
           </div>
         </div>
 
-        {/* ── SUBSCRIPTION STATUS CARD ── */}
+        {/* ── Subscription status ── */}
         {!subLoading && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+          <div className="mb-8">
             {tiktokActive ? (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 rounded-2xl border border-yellow-500/25 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 px-5 py-4">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center shrink-0">
-                  <Crown className="w-5 h-5 text-yellow-400" />
+                className="flex items-center gap-4 rounded-2xl border border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 px-5 py-4">
+                <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5 text-yellow-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white">Premium Active</p>
+                  <p className="text-sm font-bold text-foreground">Premium Active</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <CalendarDays className="w-3 h-3 text-white/35" />
-                    <p className="text-xs text-white/40">
+                    <CalendarDays className="w-3 h-3 text-foreground/40" />
+                    <p className="text-xs text-foreground/60 font-medium">
                       Expires {tiktokExpiry ? fmtExpiry(tiktokExpiry) : "—"} · Unlimited TikTok downloads
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-yellow-500/15 border border-yellow-500/20">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-yellow-400" />
-                  <span className="text-xs font-semibold text-yellow-300">Unlimited</span>
+                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-yellow-100 border border-yellow-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-yellow-600" />
+                  <span className="text-xs font-bold text-yellow-700">Unlimited</span>
                 </div>
               </motion.div>
             ) : !tiktokPaidMode ? (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 rounded-2xl border border-green-500/25 bg-gradient-to-r from-green-500/10 to-emerald-500/5 px-5 py-4">
-                <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
-                  <Zap className="w-5 h-5 text-green-400" />
+                className="flex items-center gap-4 rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-4">
+                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white">TikTok Free Mode</p>
-                  <p className="text-xs text-white/40 mt-0.5">Downloads are free for everyone right now — no limits</p>
+                  <p className="text-sm font-bold text-foreground">TikTok Free Mode</p>
+                  <p className="text-xs text-foreground/60 mt-0.5 font-medium">Downloads are free for everyone right now — no limits</p>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-green-500/15 border border-green-500/20">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                  <span className="text-xs font-semibold text-green-300">Free</span>
+                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-xl bg-green-100 border border-green-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                  <span className="text-xs font-bold text-green-700">Free</span>
                 </div>
               </motion.div>
             ) : (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                  <Download className="w-5 h-5 text-white/40" />
+                className="flex items-center gap-4 rounded-2xl border border-foreground/10 bg-white px-5 py-4 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
+                  <Download className="w-5 h-5 text-foreground/50" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">Free Plan</p>
+                  <p className="text-sm font-bold text-foreground">Free Plan</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-1.5 rounded-full bg-white/10 max-w-[120px]">
-                      <div
-                        className={cn("h-full rounded-full transition-all", remaining === 0 ? "bg-red-500" : remaining <= 3 ? "bg-orange-400" : "bg-green-500")}
-                        style={{ width: `${Math.min(100, (quota.count / FREE_LIMIT) * 100)}%` }}
-                      />
+                    <div className="flex-1 h-1.5 rounded-full bg-foreground/10 max-w-[120px]">
+                      <div className={cn("h-full rounded-full transition-all", remaining === 0 ? "bg-red-500" : remaining <= 3 ? "bg-orange-400" : "bg-green-500")}
+                        style={{ width: `${Math.min(100, (quota.count / FREE_LIMIT) * 100)}%` }} />
                     </div>
-                    <p className="text-xs text-white/40">
-                      {quota.count}/{FREE_LIMIT} TikTok downloads used this month
-                    </p>
+                    <p className="text-xs text-foreground/55 font-semibold">{quota.count}/{FREE_LIMIT} TikTok downloads used</p>
                   </div>
                 </div>
-                <Button size="sm"
-                  className="shrink-0 bg-gradient-to-r from-orange-500 to-green-500 border-0 text-white text-xs font-semibold"
-                  onClick={() => setLocation("/pay")}>
+                <Button size="sm" className="shrink-0 bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold" onClick={() => setLocation("/pay")}>
                   Upgrade Ksh 70
                 </Button>
               </motion.div>
@@ -273,166 +303,143 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* ── SLIDABLE HERO ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-medium text-white/30 uppercase tracking-widest">Services</p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => scrollTo(activeSlide - 1)}
-                className="w-7 h-7 rounded-full border border-foreground/15 flex items-center justify-center text-foreground/50 hover:text-foreground hover:border-foreground/40 transition-all">
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <div className="flex gap-1">
-                {SERVICES.map((_, i) => (
-                  <button key={i} onClick={() => scrollTo(i)}
-                    className={cn("h-1.5 rounded-full transition-all duration-300", activeSlide === i ? "bg-orange-500 w-4" : "bg-foreground/20 w-1.5")} />
-                ))}
-              </div>
-              <button onClick={() => scrollTo(activeSlide + 1)}
-                className="w-7 h-7 rounded-full border border-foreground/15 flex items-center justify-center text-foreground/50 hover:text-foreground hover:border-foreground/40 transition-all">
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          <div ref={sliderRef} className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2" style={{ scrollbarWidth: "none" }}>
+        {/* ── Services grid (fully visible, no horizontal scroll) ── */}
+        <div className="mb-10">
+          <p className="text-xs font-bold text-foreground/50 uppercase tracking-widest mb-4">Quick Access</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {SERVICES.map((svc) => {
               const Icon = svc.icon;
               return (
-                <motion.button key={svc.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                <motion.button key={svc.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   onClick={() => setLocation(svc.href)}
-                  className={cn("snap-start shrink-0 w-[220px] sm:w-[260px] rounded-2xl border p-6 text-left relative overflow-hidden",
-                    `bg-gradient-to-br ${svc.color}`, svc.border)}>
-                  <div className="absolute inset-0 opacity-20 pointer-events-none"
-                    style={{ backgroundImage: "radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 60%)" }} />
-                  <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center mb-4 bg-white/5", svc.border)}>
-                    <Icon className={cn("w-5 h-5", svc.accent)} />
+                  className={cn("rounded-2xl border p-4 text-left bg-gradient-to-br transition-shadow hover:shadow-md", svc.color, svc.border)}>
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", svc.iconBg)}>
+                    <Icon className={cn("w-4 h-4", svc.accent)} />
                   </div>
-                  <p className="font-display text-lg text-white mb-1">{svc.label}</p>
-                  <p className="text-white/40 text-xs leading-relaxed">{svc.desc}</p>
-                  <div className={cn("mt-4 text-xs font-semibold", svc.accent)}>Open →</div>
+                  <p className="font-display text-sm text-foreground mb-0.5">{svc.label}</p>
+                  <p className="text-foreground/55 text-xs font-medium">{svc.desc}</p>
                 </motion.button>
               );
             })}
           </div>
         </div>
 
-        {/* ── TODAY'S PICKS ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
+        {/* ── Today's Picks ── */}
+        <div className="mb-10">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-display text-2xl text-white">Today's Picks</h2>
-            <button onClick={() => setLocation("/wallpapers")} className="text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors">View all →</button>
+            <h2 className="font-display text-2xl text-foreground">Today's Picks</h2>
+            <button onClick={() => setLocation("/wallpapers")} className="text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors">View all →</button>
           </div>
           {picksLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-2xl bg-white/5 animate-pulse aspect-square" />
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-2xl bg-foreground/5 animate-pulse aspect-square" />
               ))}
             </div>
           ) : picks.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {picks.map((img, i) => {
                 const typeLabel = img.type === "meme" ? "Meme" : img.type === "tiktok" ? "TikTok" : "Wallpaper";
-                const typeBadgeColor = img.type === "meme" ? "text-yellow-300" : img.type === "tiktok" ? "text-blue-300" : "text-green-300";
+                const badgeColor = img.type === "meme" ? "bg-yellow-100 text-yellow-700" : img.type === "tiktok" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700";
                 return (
-                  <motion.div key={img.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-square bg-white/5 active:scale-95 transition-transform"
+                  <motion.div key={img.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    className="rounded-2xl overflow-hidden relative group cursor-pointer aspect-square bg-foreground/5 active:scale-95 transition-transform shadow-sm"
                     onClick={() => { setViewerItems(picks); setViewerIndex(i); }}>
-                    <img src={img.thumbnail ?? img.url} alt={img.title ?? typeLabel} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                      <p className="text-white font-medium text-xs truncate">{img.title ?? img.category}</p>
+                    <img src={img.thumbnail ?? img.url} alt={img.title ?? typeLabel}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                      <p className="text-white font-semibold text-xs truncate">{img.title ?? img.category}</p>
                     </div>
-                    <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-sm text-xs font-medium ${typeBadgeColor}`}>{typeLabel}</div>
+                    <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-lg text-xs font-bold ${badgeColor}`}>{typeLabel}</div>
                   </motion.div>
                 );
               })}
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-white/20 text-sm glass-card rounded-2xl">
+            <div className="h-48 flex items-center justify-center text-foreground/40 text-sm bg-white border border-foreground/10 rounded-2xl font-medium">
               Content is being added — check back soon!
             </div>
           )}
         </div>
 
-        {/* ── TIKTOK DOWNLOADER ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
-          <div className="rounded-3xl border border-orange-500/10 bg-gradient-to-br from-orange-600/5 to-blue-600/5 p-8 sm:p-10">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        {/* ── TikTok Downloader ── */}
+        <div className="mb-10">
+          <div className="rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-medium mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 border border-orange-200 text-orange-600 text-xs font-bold mb-3">
                   <Zap className="w-3 h-3" /> Watermark-free
                 </div>
-                <h2 className="font-display text-3xl sm:text-4xl text-white mb-1">TikTok Downloader</h2>
-                <p className="text-white/40">Paste any TikTok link and download the original HD video — no watermark.</p>
+                <h2 className="font-display text-2xl sm:text-3xl text-foreground mb-1">TikTok Downloader</h2>
+                <p className="text-foreground/60 text-sm font-medium">Paste any TikTok link and download the original HD video — no watermark.</p>
               </div>
               <button onClick={() => setLocation("/tiktok-download")}
-                className="shrink-0 text-xs text-blue-400 hover:text-blue-300 transition-colors border border-blue-500/20 px-4 py-2 rounded-xl">
+                className="shrink-0 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors border border-orange-200 bg-white px-4 py-2 rounded-xl">
                 Full page →
               </button>
             </div>
 
             {tiktokActive ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 mb-6">
-                <Crown className="w-4 h-4 text-yellow-400 shrink-0" />
+              <div className="flex items-center gap-3 rounded-2xl border border-yellow-200 bg-white px-4 py-3 mb-5">
+                <Crown className="w-4 h-4 text-yellow-600 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">Premium — Unlimited downloads</p>
-                  <p className="text-xs text-white/40">
-                    {tiktokExpiry ? `Expires ${fmtExpiry(tiktokExpiry)}` : "Active subscription"}
-                  </p>
+                  <p className="text-sm font-bold text-foreground">Premium — Unlimited downloads</p>
+                  <p className="text-xs text-foreground/55 font-medium">{tiktokExpiry ? `Expires ${fmtExpiry(tiktokExpiry)}` : "Active subscription"}</p>
                 </div>
-                <span className="text-xs font-semibold text-yellow-300 px-2 py-1 rounded-lg bg-yellow-500/15">∞</span>
+                <span className="text-xs font-bold text-yellow-700 px-2 py-1 rounded-lg bg-yellow-100">∞</span>
               </div>
             ) : exhausted ? (
-              <div className="flex items-center gap-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 mb-6">
-                <Crown className="w-5 h-5 text-red-400 shrink-0" />
+              <div className="flex items-center gap-4 rounded-2xl border border-red-200 bg-white p-4 mb-5">
+                <Crown className="w-5 h-5 text-red-500 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">Monthly limit reached — {FREE_LIMIT}/{FREE_LIMIT} used</p>
-                  <p className="text-xs text-white/40">Upgrade for unlimited downloads · Resets next month</p>
+                  <p className="text-sm font-bold text-foreground">Monthly limit reached — {FREE_LIMIT}/{FREE_LIMIT} used</p>
+                  <p className="text-xs text-foreground/55 font-medium">Upgrade for unlimited · Resets next month</p>
                 </div>
-                <Button size="sm" className="shrink-0 bg-gradient-to-r from-orange-500 to-green-500 border-0 text-xs" onClick={() => setLocation("/pay")}>
+                <Button size="sm" className="shrink-0 bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold" onClick={() => setLocation("/pay")}>
                   Upgrade Ksh 70
                 </Button>
               </div>
             ) : (
-              <p className="text-xs text-white/30 mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+              <p className="text-xs font-semibold text-foreground/60 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
                 {remaining} free {remaining === 1 ? "download" : "downloads"} left this month
               </p>
             )}
 
             <div className="flex gap-3 mb-4">
               <div className="relative flex-1">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
                 <Input value={tkUrl} onChange={e => { setTkUrl(e.target.value); setTkError(null); setTkResult(null); }}
                   onKeyDown={e => e.key === "Enter" && handleTkFetch()}
                   placeholder="https://www.tiktok.com/@user/video/..."
                   disabled={exhausted || tkLoading}
-                  className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/20 h-12" />
+                  className="pl-9 bg-white border-foreground/20 h-12 font-medium" />
               </div>
               <Button onClick={handleTkFetch} disabled={!tkUrl.trim() || exhausted || tkLoading}
-                className="shrink-0 bg-orange-500 hover:bg-orange-400 h-12 px-6">
+                className="shrink-0 bg-orange-500 hover:bg-orange-400 text-white h-12 px-6 font-bold">
                 {tkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch"}
               </Button>
             </div>
 
             {tkError && (
-              <div className="flex items-center gap-2 text-red-300 text-sm bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-3 mb-4">
+              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 font-medium">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {tkError}
               </div>
             )}
 
             {tkResult && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center gap-4">
+                className="rounded-2xl border border-foreground/10 bg-white p-4 flex items-center gap-4 shadow-sm">
                 {tkResult.thumbnail && (
-                  <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 bg-white/5">
+                  <div className="w-14 h-20 rounded-xl overflow-hidden shrink-0 bg-foreground/5">
                     <img src={tkResult.thumbnail} alt="thumb" className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium line-clamp-1 mb-1">{tkResult.title}</p>
-                  <p className="text-white/30 text-xs mb-3">HD · No watermark</p>
+                  <p className="text-foreground text-sm font-bold line-clamp-1 mb-1">{tkResult.title}</p>
+                  <p className="text-foreground/50 text-xs mb-3 font-medium">HD · No watermark</p>
                   <Button onClick={handleTkDownload} disabled={isDownloading} size="sm"
-                    className="bg-white text-black hover:bg-white/90 font-semibold gap-2">
+                    className="bg-orange-500 hover:bg-orange-400 text-white font-bold gap-2">
                     {isDownloading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {dlProgress > 0 ? `${dlProgress}%` : "…"}</> : <><Download className="w-3.5 h-3.5" /> Download MP4</>}
                   </Button>
                 </div>
@@ -441,27 +448,136 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* ── MEME MAKER ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-          <div className="rounded-3xl border border-yellow-500/10 bg-gradient-to-br from-yellow-600/5 to-green-600/5 p-8 sm:p-10">
+        {/* ── Social Links ── */}
+        <div className="mb-10">
+          <div className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50 p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-violet-600" />
+              </div>
+              <div>
+                <h2 className="font-display text-2xl text-foreground">Social Links</h2>
+                <p className="text-foreground/60 text-sm font-medium">Share your profiles — others can find and follow you</p>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6">
+              {(["mine", "community"] as const).map(tab => (
+                <button key={tab} onClick={() => setSocialTab(tab)}
+                  className={cn("px-4 py-2 rounded-full text-sm font-bold transition-all",
+                    socialTab === tab ? "bg-violet-500 text-white" : "bg-white border border-violet-200 text-foreground/60 hover:text-foreground")}>
+                  {tab === "mine" ? "My Links" : "Community"}
+                </button>
+              ))}
+            </div>
+
+            {socialTab === "mine" && (
+              <div className="space-y-4">
+                {/* Add form */}
+                <div className="bg-white rounded-2xl border border-violet-100 p-4">
+                  <p className="text-xs font-bold text-foreground/60 uppercase tracking-widest mb-3">Add or update a link</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                    <select value={newPlatform} onChange={e => setNewPlatform(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-foreground/15 bg-white text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-violet-300">
+                      {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <Input value={newUrl} onChange={e => setNewUrl(e.target.value)}
+                      placeholder="https://instagram.com/yourname"
+                      className="sm:col-span-1 bg-white border-foreground/15 font-medium" />
+                    <Input value={newUsername} onChange={e => setNewUsername(e.target.value)}
+                      placeholder="@username (optional)"
+                      className="bg-white border-foreground/15 font-medium" />
+                  </div>
+                  {linkError && <p className="text-red-500 text-xs font-semibold mb-2">{linkError}</p>}
+                  <Button onClick={handleAddLink} disabled={linkSaving}
+                    className="bg-violet-500 hover:bg-violet-600 text-white font-bold gap-2">
+                    {linkSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Save Link</>}
+                  </Button>
+                </div>
+
+                {/* My links list */}
+                {myLinks.length === 0 ? (
+                  <div className="text-center py-8 text-foreground/40 font-medium text-sm bg-white rounded-2xl border border-violet-100">
+                    No links yet — add your first social profile above
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {myLinks.map(link => (
+                      <div key={link.id} className="flex items-center gap-3 bg-white rounded-2xl border border-violet-100 px-4 py-3">
+                        <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+                          <PlatformIcon platform={link.platform} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-foreground">{link.platform}</p>
+                          {link.username && <p className="text-xs text-foreground/55 font-medium">{link.username}</p>}
+                          <a href={link.url} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-violet-600 hover:text-violet-700 truncate block font-semibold">{link.url}</a>
+                        </div>
+                        <button onClick={() => handleDeleteLink(link.id)}
+                          className="text-foreground/30 hover:text-red-500 transition-colors p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {socialTab === "community" && (
+              <div>
+                {communityLinks.length === 0 ? (
+                  <div className="text-center py-8 text-foreground/40 font-medium text-sm bg-white rounded-2xl border border-violet-100">
+                    No community links yet — be the first to add yours!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {communityLinks.map(link => (
+                      <div key={link.id} className="flex items-center gap-3 bg-white rounded-2xl border border-violet-100 px-4 py-3">
+                        <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+                          <PlatformIcon platform={link.platform} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-violet-600">{link.platform}</p>
+                          <p className="text-sm font-bold text-foreground truncate">{link.user_name}</p>
+                          {link.username && <p className="text-xs text-foreground/55 font-medium">{link.username}</p>}
+                        </div>
+                        <a href={link.url} target="_blank" rel="noopener noreferrer"
+                          className="text-violet-500 hover:text-violet-600 transition-colors p-1">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Meme Maker ── */}
+        <div className="mb-10">
+          <div className="rounded-3xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-medium mb-3">
-                  <Sparkles className="w-3 h-3" /> Always free · No limits
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 border border-green-200 text-green-700 text-xs font-bold mb-3">
+                  <CheckCircle2 className="w-3 h-3" /> Always free · No limits
                 </div>
-                <h2 className="font-display text-3xl sm:text-4xl text-white mb-2">Meme Maker</h2>
-                <p className="text-white/40 max-w-lg">
-                  Create custom memes with your text in seconds. Classic black background, white Impact font, 1080×1080. Download instantly — completely free, forever.
+                <h2 className="font-display text-2xl sm:text-3xl text-foreground mb-2">Meme Maker</h2>
+                <p className="text-foreground/60 text-sm font-medium max-w-lg">
+                  Create custom memes with your text in seconds — Impact font, 1080×1080. Download instantly, completely free, forever.
                 </p>
               </div>
               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 onClick={() => setLocation("/meme-maker")}
-                className="shrink-0 flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-6 py-3 rounded-2xl transition-colors">
+                className="shrink-0 flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-bold text-sm px-6 py-3 rounded-2xl transition-colors">
                 <Wand2 className="w-4 h-4" /> Create Meme
               </motion.button>
             </div>
           </div>
         </div>
+
       </main>
 
       <Footer />
