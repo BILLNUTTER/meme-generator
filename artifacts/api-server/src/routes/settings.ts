@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { SettingsModel } from "../lib/mongodb";
+import { query, queryOne } from "../lib/db";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -7,16 +7,21 @@ const router: IRouter = Router();
 const PESAPAL_KEYS = ["pesapalConsumerKey", "pesapalConsumerSecret", "pesapalSandbox", "pesapalDirectUrl"] as const;
 
 router.get("/settings/pesapal", requireAuth, async (_req, res): Promise<void> => {
-  const docs = await SettingsModel.find({ key: { $in: PESAPAL_KEYS } });
+  const rows = await query<{ key: string; value: unknown }>(
+    `SELECT key, value FROM settings WHERE key = ANY($1)`,
+    [PESAPAL_KEYS as unknown as string[]]
+  );
   const result: Record<string, unknown> = {};
-  for (const doc of docs) result[doc.key as string] = doc.value;
+  for (const row of rows) result[row.key] = row.value;
   res.json(result);
 });
 
-// Public endpoint — returns only the direct payment URL (no secrets)
 router.get("/settings/payment-url", async (_req, res): Promise<void> => {
-  const doc = await SettingsModel.findOne({ key: "pesapalDirectUrl" });
-  res.json({ url: (doc?.value as string) || null });
+  const row = await queryOne<{ value: unknown }>(
+    `SELECT value FROM settings WHERE key = $1`,
+    ["pesapalDirectUrl"]
+  );
+  res.json({ url: (row?.value as string) || null });
 });
 
 router.put("/settings/pesapal", requireAuth, async (req, res): Promise<void> => {
@@ -34,7 +39,13 @@ router.put("/settings/pesapal", requireAuth, async (req, res): Promise<void> => 
   if (pesapalDirectUrl !== undefined)      updates.push({ key: "pesapalDirectUrl",       value: pesapalDirectUrl });
 
   await Promise.all(
-    updates.map(u => SettingsModel.findOneAndUpdate({ key: u.key }, { value: u.value }, { upsert: true }))
+    updates.map(u =>
+      query(
+        `INSERT INTO settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [u.key, JSON.stringify(u.value)]
+      )
+    )
   );
 
   res.json({ success: true });

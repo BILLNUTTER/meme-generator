@@ -4,12 +4,13 @@ import { logger } from "./logger";
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-  throw new Error("MONGO_URI environment variable is required.");
+  logger.warn("MONGO_URI not set — MongoDB features disabled (settings now use PostgreSQL).");
 }
 
 export async function connectMongo() {
+  if (!MONGO_URI) return;
   if (mongoose.connection.readyState >= 1) return;
-  await mongoose.connect(MONGO_URI!);
+  await mongoose.connect(MONGO_URI);
   logger.info("Connected to MongoDB");
 }
 
