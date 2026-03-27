@@ -48,7 +48,6 @@ function platformColor(p: string) {
 
 /* ── types ── */
 interface SocialLink { id: string; platform: string; url: string; username?: string; created_at: string; }
-interface CommunityLink extends SocialLink { user_name: string; user_id: string; }
 interface Member { id: string; name: string; top_platform: string; top_url: string; top_username: string; link_count: string; }
 
 /* ── quick access services ── */
@@ -136,7 +135,6 @@ export function Dashboard() {
 
   // Social links
   const [myLinks, setMyLinks] = useState<SocialLink[]>([]);
-  const [communityLinks, setCommunityLinks] = useState<CommunityLink[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [followed, setFollowed] = useState<string[]>(getFollowed());
   const [iframeTarget, setIframeTarget] = useState<Member | null>(null);
@@ -145,7 +143,6 @@ export function Dashboard() {
   const [newUsername, setNewUsername] = useState("");
   const [linkSaving, setLinkSaving] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const [socialTab, setSocialTab] = useState<"mine" | "community">("mine");
   const [showFollowed, setShowFollowed] = useState(false);
 
   const token = localStorage.getItem("userToken");
@@ -159,7 +156,6 @@ export function Dashboard() {
       .catch(() => {}).finally(() => setSubLoading(false));
     fetch(`${baseUrl}/api/settings`).then(r => r.json()).then((d: any) => setTiktokPaidMode(!!d.tiktokPaidMode)).catch(() => {});
     fetch(`${baseUrl}/api/social-links`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(setMyLinks).catch(() => {});
-    fetch(`${baseUrl}/api/community/social-links`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(setCommunityLinks).catch(() => {});
     fetch(`${baseUrl}/api/community/members`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then(setMembers).catch(() => {});
   }, [isAuthenticated, token, baseUrl]);
 
@@ -237,7 +233,7 @@ export function Dashboard() {
   if (!isReady || !isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen flex flex-col pt-16 bg-background">
+    <div className="min-h-screen flex flex-col pt-16 page-live">
       <Header />
       <AppInstallPrompt />
 
@@ -349,17 +345,19 @@ export function Dashboard() {
               <span className="absolute top-2 right-2 text-[9px] font-black bg-white text-orange-500 px-1.5 py-0.5 rounded-full uppercase tracking-wider">🔥 Hot</span>
             </motion.button>
 
-            {SERVICES.map((svc) => {
+            {SERVICES.map((svc, i) => {
               const Icon = svc.icon;
+              const cycleClass = [`card-live-1`, `card-live-2`, `card-live-3`, `card-live-4`, `card-live-5`][i % 5];
               return (
-                <motion.button key={svc.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                <motion.button key={svc.id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                   onClick={() => setLocation(svc.href)}
-                  className={cn("rounded-2xl border p-4 text-left bg-gradient-to-br transition-shadow hover:shadow-md", svc.color, svc.border)}>
-                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", svc.iconBg)}>
-                    <Icon className={cn("w-4 h-4", svc.accent)} />
+                  className={cn("rounded-2xl border-0 p-4 text-left overflow-hidden shadow-md hover:shadow-lg transition-shadow", cycleClass)}
+                  style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+                  <div className="w-9 h-9 rounded-xl bg-white/30 flex items-center justify-center mb-3">
+                    <Icon className="w-4 h-4 text-white drop-shadow" />
                   </div>
-                  <p className="font-display text-sm text-foreground mb-0.5">{svc.label}</p>
-                  <p className="text-foreground/55 text-xs font-medium">{svc.desc}</p>
+                  <p className="font-display text-sm text-white mb-0.5 drop-shadow">{svc.label}</p>
+                  <p className="text-white/85 text-xs font-semibold">{svc.desc}</p>
                 </motion.button>
               );
             })}
@@ -415,9 +413,9 @@ export function Dashboard() {
                           transition={{ delay: i * 0.04 }}
                           onClick={() => setIframeTarget(member)}
                           className={cn(
-                            "w-full flex items-center gap-3 px-4 py-3 border-b border-foreground/5 last:border-0",
-                            "text-left hover:bg-violet-50/60 active:bg-violet-100/60 transition-colors group",
-                            "member-card-pulse"
+                            "w-full flex items-center gap-3 px-4 py-4 border-b border-white/20 last:border-0",
+                            "text-left hover:brightness-110 active:brightness-90 transition-all group rounded-none",
+                            ["card-live","card-live-1","card-live-2","card-live-3","card-live-4"][i % 5]
                           )}>
                           {/* Avatar */}
                           <div className={cn(
@@ -427,16 +425,14 @@ export function Dashboard() {
                             {isFollowed ? <UserCheck className="w-4 h-4" /> : member.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-foreground truncate">{member.name}</p>
+                            <p className="text-sm font-bold text-white drop-shadow truncate">{member.name}</p>
                             <div className="flex items-center gap-1 mt-0.5">
-                              <span className={cn("shrink-0", platformColor(member.top_platform))}>
-                                <PlatformIcon platform={member.top_platform} className="w-3 h-3" />
-                              </span>
-                              <p className="text-xs text-foreground/50 font-medium truncate">
+                              <PlatformIcon platform={member.top_platform} className="w-3 h-3 text-white/80" />
+                              <p className="text-xs text-white/80 font-semibold truncate">
                                 {member.top_username || member.top_platform}
                               </p>
                               {Number(member.link_count) > 1 && (
-                                <span className="ml-1 text-[10px] text-foreground/30 font-semibold shrink-0">
+                                <span className="ml-1 text-[10px] text-white/60 font-semibold shrink-0">
                                   +{Number(member.link_count) - 1}
                                 </span>
                               )}
@@ -444,9 +440,11 @@ export function Dashboard() {
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {isFollowed ? (
-                              <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-lg">Followed</span>
+                              <span className="text-[10px] font-bold text-white bg-green-500 border border-green-400 px-2 py-0.5 rounded-lg flex items-center gap-0.5">
+                                <UserCheck className="w-2.5 h-2.5" /> Done
+                              </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-lg group-hover:bg-violet-100 transition-colors flex items-center gap-0.5">
+                              <span className="text-[10px] font-bold text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded-lg flex items-center gap-0.5 backdrop-blur-sm">
                                 Follow <ChevronRight className="w-2.5 h-2.5" />
                               </span>
                             )}
@@ -591,87 +589,48 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="flex gap-2 mb-6">
-              {(["mine", "community"] as const).map(tab => (
-                <button key={tab} onClick={() => setSocialTab(tab)}
-                  className={cn("px-4 py-2 rounded-full text-sm font-bold transition-all",
-                    socialTab === tab ? "bg-violet-500 text-white shadow-md" : "bg-white border border-violet-200 text-foreground/60 hover:text-foreground")}>
-                  {tab === "mine" ? `My Links (${myLinks.length})` : `Community (${communityLinks.length})`}
-                </button>
-              ))}
-            </div>
-
-            {socialTab === "mine" && (
-              <div className="space-y-4">
-                <div className="bg-white rounded-2xl border border-violet-100 p-4">
-                  <p className="text-xs font-bold text-foreground/60 uppercase tracking-widest mb-3">Add or update a link</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-                    <select value={newPlatform} onChange={e => setNewPlatform(e.target.value)}
-                      className="px-3 py-2 rounded-xl border border-foreground/15 bg-white text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-violet-300">
-                      {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                    <Input value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="https://instagram.com/yourname" className="bg-white border-foreground/15 font-medium" />
-                    <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="@username (optional)" className="bg-white border-foreground/15 font-medium" />
-                  </div>
-                  {linkError && <p className="text-red-500 text-xs font-semibold mb-2">{linkError}</p>}
-                  <Button onClick={handleAddLink} disabled={linkSaving} className="bg-violet-500 hover:bg-violet-600 text-white font-bold gap-2">
-                    {linkSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Save Link</>}
-                  </Button>
+            {/* Only show My Links — no Community tab here */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-violet-100 p-4">
+                <p className="text-xs font-bold text-foreground/60 uppercase tracking-widest mb-3">Add or update a link</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                  <select value={newPlatform} onChange={e => setNewPlatform(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-foreground/15 bg-white text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-violet-300">
+                    {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <Input value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="https://instagram.com/yourname" className="bg-white border-foreground/15 font-medium" />
+                  <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="@username (optional)" className="bg-white border-foreground/15 font-medium" />
                 </div>
-
-                {myLinks.length === 0 ? (
-                  <div className="text-center py-8 text-foreground/40 font-medium text-sm bg-white rounded-2xl border border-violet-100">
-                    No links yet — add your first social profile above
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {myLinks.map(link => (
-                      <div key={link.id} className="flex items-center gap-3 bg-white rounded-2xl border border-violet-100 px-4 py-3">
-                        <div className={cn("w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center shrink-0", platformColor(link.platform))}>
-                          <PlatformIcon platform={link.platform} className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-foreground">{link.platform}</p>
-                          {link.username && <p className="text-xs text-foreground/55 font-medium">{link.username}</p>}
-                          <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-600 hover:text-violet-700 truncate block font-semibold">{link.url}</a>
-                        </div>
-                        <button onClick={() => handleDeleteLink(link.id)} className="text-foreground/30 hover:text-red-500 transition-colors p-1">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {linkError && <p className="text-red-500 text-xs font-semibold mb-2">{linkError}</p>}
+                <Button onClick={handleAddLink} disabled={linkSaving} className="bg-violet-500 hover:bg-violet-600 text-white font-bold gap-2">
+                  {linkSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Save Link</>}
+                </Button>
               </div>
-            )}
 
-            {socialTab === "community" && (
-              <div>
-                {communityLinks.length === 0 ? (
-                  <div className="text-center py-8 text-foreground/40 font-medium text-sm bg-white rounded-2xl border border-violet-100">
-                    No community links yet — be the first!
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {communityLinks.map(link => (
-                      <div key={link.id} className="flex items-center gap-3 bg-white rounded-2xl border border-violet-100 px-4 py-3">
-                        <div className={cn("w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center shrink-0", platformColor(link.platform))}>
-                          <PlatformIcon platform={link.platform} className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-violet-600">{link.platform}</p>
-                          <p className="text-sm font-bold text-foreground truncate">{link.user_name}</p>
-                          {link.username && <p className="text-xs text-foreground/55 font-medium">{link.username}</p>}
-                        </div>
-                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-violet-500 hover:text-violet-600 transition-colors p-1">
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
+              {myLinks.length === 0 ? (
+                <div className="text-center py-8 text-foreground/40 font-medium text-sm bg-white rounded-2xl border border-violet-100">
+                  No links yet — add your first social profile above
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {myLinks.map(link => (
+                    <div key={link.id} className="flex items-center gap-3 bg-white rounded-2xl border border-violet-100 px-4 py-3">
+                      <div className={cn("w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center shrink-0", platformColor(link.platform))}>
+                        <PlatformIcon platform={link.platform} className="w-4 h-4" />
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground">{link.platform}</p>
+                        {link.username && <p className="text-xs text-foreground/55 font-medium">{link.username}</p>}
+                        <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-600 hover:text-violet-700 truncate block font-semibold">{link.url}</a>
+                      </div>
+                      <button onClick={() => handleDeleteLink(link.id)} className="text-foreground/30 hover:text-red-500 transition-colors p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

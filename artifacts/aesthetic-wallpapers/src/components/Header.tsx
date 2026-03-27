@@ -45,7 +45,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 glass">
+      <header className="fixed top-0 left-0 right-0 z-40 nav-live border-b border-black/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
@@ -132,7 +132,7 @@ export function Header() {
 
       {/* Mobile slide-down menu */}
       {menuOpen && user && (
-        <div className="fixed top-16 left-0 right-0 z-[39] glass border-b border-foreground/8 py-3 px-4 lg:hidden">
+        <div className="fixed top-16 left-0 right-0 z-[39] nav-live border-b border-black/5 py-3 px-4 lg:hidden">
           <nav className="flex flex-col gap-1 max-w-7xl mx-auto">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link

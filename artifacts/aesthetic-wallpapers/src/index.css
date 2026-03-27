@@ -171,17 +171,49 @@ li.text-white { color: var(--lt) !important; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* ── Animated colour-cycling gradient for Quick Access boost card ── */
-  .boost-card {
-    background-size: 300% 300%;
-    animation: boost-cycle 3s ease infinite;
-  }
+  /* ══════════════════════════════════════════
+     GLOBAL LIVELY COLOR CYCLE SYSTEM
+  ══════════════════════════════════════════ */
+
+  /* Vivid gradient cycle — used for ALL cards platform-wide */
   @keyframes boost-cycle {
-    0%   { background-position: 0% 50%;   background-image: linear-gradient(135deg,#f97316,#fbbf24,#10b981); }
-    25%  { background-position: 50% 0%;   background-image: linear-gradient(135deg,#8b5cf6,#ec4899,#f97316); }
-    50%  { background-position: 100% 50%; background-image: linear-gradient(135deg,#06b6d4,#6366f1,#f59e0b); }
-    75%  { background-position: 50% 100%; background-image: linear-gradient(135deg,#ef4444,#f97316,#facc15); }
-    100% { background-position: 0% 50%;   background-image: linear-gradient(135deg,#f97316,#fbbf24,#10b981); }
+    0%   { background: linear-gradient(135deg,#f97316,#fbbf24,#10b981); }
+    20%  { background: linear-gradient(135deg,#8b5cf6,#ec4899,#f97316); }
+    40%  { background: linear-gradient(135deg,#06b6d4,#6366f1,#f59e0b); }
+    60%  { background: linear-gradient(135deg,#ef4444,#f97316,#facc15); }
+    80%  { background: linear-gradient(135deg,#10b981,#0ea5e9,#8b5cf6); }
+    100% { background: linear-gradient(135deg,#f97316,#fbbf24,#10b981); }
+  }
+  .boost-card    { animation: boost-cycle 3s ease infinite; }
+  .card-live     { animation: boost-cycle 3s ease infinite; }
+  .card-live-1   { animation: boost-cycle 3s ease 0.5s  infinite; }
+  .card-live-2   { animation: boost-cycle 3s ease 1.0s  infinite; }
+  .card-live-3   { animation: boost-cycle 3s ease 1.5s  infinite; }
+  .card-live-4   { animation: boost-cycle 3s ease 2.0s  infinite; }
+  .card-live-5   { animation: boost-cycle 3s ease 2.5s  infinite; }
+
+  /* Soft page-background cycle */
+  @keyframes page-bg-cycle {
+    0%   { background: linear-gradient(160deg,hsl(30 60% 97%),hsl(270 30% 97%)); }
+    25%  { background: linear-gradient(160deg,hsl(190 40% 97%),hsl(20  50% 97%)); }
+    50%  { background: linear-gradient(160deg,hsl(140 35% 97%),hsl(300 30% 97%)); }
+    75%  { background: linear-gradient(160deg,hsl(350 40% 97%),hsl(200 40% 97%)); }
+    100% { background: linear-gradient(160deg,hsl(30 60% 97%),hsl(270 30% 97%)); }
+  }
+  .page-live { animation: page-bg-cycle 8s ease infinite; min-height: 100vh; }
+
+  /* Nav bar cycle */
+  @keyframes nav-bg-cycle {
+    0%   { background: rgba(255,245,235,0.95); }
+    25%  { background: rgba(240,235,255,0.95); }
+    50%  { background: rgba(232,250,243,0.95); }
+    75%  { background: rgba(232,244,255,0.95); }
+    100% { background: rgba(255,245,235,0.95); }
+  }
+  .nav-live {
+    animation: nav-bg-cycle 6s ease infinite;
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
   }
 
   /* Member card button animation */

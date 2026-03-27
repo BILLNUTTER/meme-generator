@@ -57,15 +57,26 @@ const WHY = [
 ];
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCatIdx, setActiveCatIdx] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const activeCategory = CATEGORIES[activeCatIdx];
 
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem("userToken"));
     const onAuth = () => setIsLoggedIn(!!localStorage.getItem("userToken"));
     window.addEventListener("auth-change", onAuth);
     return () => window.removeEventListener("auth-change", onAuth);
+  }, []);
+
+  /* Auto-advance category every 2 seconds */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setDirection(1);
+      setActiveCatIdx(i => (i + 1) % CATEGORIES.length);
+    }, 2000);
+    return () => clearInterval(timer);
   }, []);
 
   const { data: images = [], isLoading } = useGetImages(
@@ -82,7 +93,7 @@ export default function Home() {
   }, [images, activeCategory]);
 
   return (
-    <div className="min-h-screen flex flex-col pt-16 overflow-x-hidden bg-background">
+    <div className="min-h-screen flex flex-col pt-16 overflow-x-hidden page-live">
       <Header />
 
       {/* ══════════════════════════════════════════════════════════
@@ -174,20 +185,23 @@ export default function Home() {
             <h2 className="font-display text-4xl text-foreground">6 powerful features, all free</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map(({ icon: Icon, title, desc, color, border, iconBg, accent }) => (
-              <motion.div key={title} whileHover={{ y: -3 }}
-                className={cn("rounded-2xl border bg-gradient-to-br p-6 transition-shadow hover:shadow-md", color, border)}>
-                <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center mb-4", iconBg)}>
-                  <Icon className={cn("w-5 h-5", accent)} />
-                </div>
-                <h3 className="font-display text-lg text-foreground mb-2">{title}</h3>
-                <p className="text-foreground/60 text-sm leading-relaxed font-medium mb-4">{desc}</p>
-                <Link href={isLoggedIn ? "#" : "/register"}
-                  className={cn("inline-flex items-center gap-1.5 text-sm font-bold", accent)}>
-                  Get started <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </motion.div>
-            ))}
+            {FEATURES.map(({ icon: Icon, title, desc }, i) => {
+              const cycleClass = [`card-live`,`card-live-1`,`card-live-2`,`card-live-3`,`card-live-4`,`card-live-5`][i % 6];
+              return (
+                <motion.div key={title} whileHover={{ y: -4, scale: 1.01 }}
+                  className={cn("rounded-2xl border-0 p-6 shadow-md hover:shadow-xl transition-shadow overflow-hidden", cycleClass)}>
+                  <div className="w-11 h-11 rounded-xl bg-white/25 flex items-center justify-center mb-4">
+                    <Icon className="w-5 h-5 text-white drop-shadow" />
+                  </div>
+                  <h3 className="font-display text-lg text-white mb-2 drop-shadow">{title}</h3>
+                  <p className="text-white/85 text-sm leading-relaxed font-medium mb-4">{desc}</p>
+                  <Link href={isLoggedIn ? "#" : "/register"}
+                    className="inline-flex items-center gap-1.5 text-sm font-bold text-white/90 hover:text-white">
+                    Get started <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         </section>
 
@@ -208,8 +222,8 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-3 mb-8">
-            {CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => setActiveCategory(cat)}
+            {CATEGORIES.map((cat, i) => (
+              <button key={cat} onClick={() => { setDirection(i > activeCatIdx ? 1 : -1); setActiveCatIdx(i); }}
                 className={cn(
                   "px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300",
                   activeCategory === cat
@@ -221,13 +235,21 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="min-h-[280px] flex items-center justify-center">
+          <div className="min-h-[280px] flex items-center justify-center overflow-hidden">
             {isLoading ? (
               <div className="w-8 h-8 rounded-full border-2 border-orange-200 border-t-orange-500 animate-spin" />
             ) : (
-              <AnimatePresence mode="wait">
-                <motion.div key={activeCategory} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="w-full">
+              <AnimatePresence mode="wait" custom={direction}>
+                <motion.div key={activeCategory}
+                  custom={direction}
+                  variants={{
+                    enter: (d: number) => ({ x: d * 80, opacity: 0 }),
+                    center: { x: 0, opacity: 1 },
+                    exit:  (d: number) => ({ x: d * -80, opacity: 0 }),
+                  }}
+                  initial="enter" animate="center" exit="exit"
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="w-full">
                   {samples.length === 0 ? (
                     <div className="text-center py-20 text-foreground/40 border border-foreground/10 rounded-3xl bg-foreground/[0.02]">
                       <p className="font-display text-xl italic">No samples yet for this category.</p>
