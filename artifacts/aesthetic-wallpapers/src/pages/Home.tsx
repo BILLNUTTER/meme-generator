@@ -326,7 +326,7 @@ export default function Home() {
               { step: "02", icon: Download,   title: "Browse & download",       desc: "Explore wallpapers, memes and TikTok videos. One tap downloads anything." },
               { step: "03", icon: Users,      title: "Share & connect",         desc: "Add your social links. Discover other members. Grow your following." },
             ].map(({ step, icon: Icon, title, desc }, i) => (
-              <div key={step} className={`relative rounded-2xl overflow-hidden p-8 card-live-${i}`}>
+              <div key={step} className={`relative rounded-2xl overflow-hidden p-8 ${["card-live","card-live-1","card-live-2"][i]}`}>
                 <div className="text-5xl font-display text-white/20 absolute top-6 right-6">{step}</div>
                 <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mb-5">
                   <Icon className="w-5 h-5 text-white" />
@@ -346,7 +346,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {WHY.map(({ icon: Icon, title, desc }, i) => (
-              <div key={title} className={`rounded-2xl overflow-hidden p-6 hover:-translate-y-1 transition-transform duration-300 card-live-${i}`}>
+              <div key={title} className={`rounded-2xl overflow-hidden p-6 hover:-translate-y-1 transition-transform duration-300 ${["card-live","card-live-1","card-live-2","card-live-3"][i % 4]}`}>
                 <Icon className="w-8 h-8 mb-4 text-white" />
                 <h3 className="font-display text-white text-lg mb-2">{title}</h3>
                 <p className="text-white/75 text-xs leading-relaxed font-medium">{desc}</p>

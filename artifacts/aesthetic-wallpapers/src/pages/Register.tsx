@@ -59,24 +59,24 @@ export default function Register() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="hidden lg:block"
+            className="hidden lg:block card-live-3 rounded-3xl overflow-hidden p-8"
           >
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full mb-5">
+            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-white bg-white/20 border border-white/30 px-3 py-1 rounded-full mb-5">
               Free forever
             </span>
-            <h2 className="font-display text-3xl text-foreground mb-4 leading-snug">
+            <h2 className="font-display text-3xl text-white mb-4 leading-snug">
               Everything you need<br />for aesthetic content.
             </h2>
-            <p className="text-foreground/45 text-sm leading-relaxed mb-8">
+            <p className="text-white/80 text-sm leading-relaxed mb-8">
               Join thousands of users who download wallpapers, memes, and watermark-free TikToks every day.
             </p>
             <ul className="space-y-3.5">
               {PERKS.map((perk) => (
                 <li key={perk} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-green-400" />
+                  <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
                   </div>
-                  <span className="text-sm text-foreground/65">{perk}</span>
+                  <span className="text-sm text-white/85 font-medium">{perk}</span>
                 </li>
               ))}
             </ul>
@@ -87,63 +87,63 @@ export default function Register() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="w-full glass-card rounded-2xl p-8 sm:p-10"
+            className="w-full card-live-1 rounded-2xl overflow-hidden p-8 sm:p-10"
           >
             <div className="mb-8">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-5">
-                <User className="w-5 h-5 text-orange-400" />
+              <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center mb-5">
+                <User className="w-5 h-5 text-white" />
               </div>
-              <h1 className="font-display text-3xl text-foreground mb-1.5">Create account</h1>
-              <p className="text-foreground/45 text-sm">It's free — no credit card required.</p>
+              <h1 className="font-display text-3xl text-white mb-1.5">Create account</h1>
+              <p className="text-white/75 text-sm">It's free — no credit card required.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                <label className="text-xs font-semibold uppercase tracking-wider text-white/80">
                   Full name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Your Name"
-                    className="pl-10 bg-foreground/4 border-foreground/10 focus:border-foreground/30 rounded-xl h-11"
+                    className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:border-white/60 rounded-xl h-11"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                <label className="text-xs font-semibold uppercase tracking-wider text-white/80">
                   Email address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="pl-10 bg-foreground/4 border-foreground/10 focus:border-foreground/30 rounded-xl h-11"
+                    className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:border-white/60 rounded-xl h-11"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                <label className="text-xs font-semibold uppercase tracking-wider text-white/80">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <Input
                     type="password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="pl-10 bg-foreground/4 border-foreground/10 focus:border-foreground/30 rounded-xl h-11"
+                    className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:border-white/60 rounded-xl h-11"
                     required
                     minLength={6}
                   />
@@ -152,7 +152,7 @@ export default function Register() {
 
               <Button
                 type="submit"
-                className="w-full h-11 text-sm font-semibold rounded-xl mt-2 bg-orange-500 hover:bg-orange-400 text-white border-0"
+                className="w-full h-11 text-sm font-semibold rounded-xl mt-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white"
                 disabled={isPending}
               >
                 {isPending
@@ -162,10 +162,10 @@ export default function Register() {
               </Button>
             </form>
 
-            <div className="mt-7 pt-6 border-t border-foreground/8 text-center">
-              <p className="text-sm text-foreground/45">
+            <div className="mt-7 pt-6 border-t border-white/20 text-center">
+              <p className="text-sm text-white/75">
                 Already have an account?{" "}
-                <Link href="/login" className="text-foreground font-semibold hover:opacity-80 transition-opacity">
+                <Link href="/login" className="text-white font-semibold hover:opacity-80 transition-opacity">
                   Sign in →
                 </Link>
               </p>

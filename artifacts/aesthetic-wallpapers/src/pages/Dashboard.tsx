@@ -388,9 +388,9 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex-1 rounded-2xl border border-violet-100 bg-white overflow-hidden shadow-sm">
+              <div className="rounded-2xl border border-violet-100 bg-white overflow-y-auto no-scrollbar shadow-sm" style={{ maxHeight: 420 }}>
                 {visibleMembers.length === 0 ? (
-                  <div className="min-h-[340px] flex flex-col items-center justify-center gap-3 p-6 text-center">
+                  <div className="min-h-[280px] flex flex-col items-center justify-center gap-3 p-6 text-center">
                     <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center">
                       <Users className="w-6 h-6 text-violet-300" />
                     </div>
@@ -405,7 +405,7 @@ export function Dashboard() {
                     )}
                   </div>
                 ) : (
-                  <div className="overflow-y-auto no-scrollbar" style={{ maxHeight: 420 }}>
+                  <div>
                     {visibleMembers.map((member, i) => {
                       const isFollowed = followed.includes(member.id);
                       return (

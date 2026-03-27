@@ -189,13 +189,15 @@ li.text-white { color: var(--lt) !important; }
     100% { background: linear-gradient(135deg,#f97316,#fbbf24,#10b981);
            box-shadow: 0 0 0 3px #f97316, 0 0 22px rgba(249,115,22,0.55); }
   }
-  .boost-card  { animation: boost-cycle 3s ease infinite; }
-  .card-live   { animation: boost-cycle 3s ease 0s    infinite; }
-  .card-live-1 { animation: boost-cycle 3s ease 0.5s  infinite; }
-  .card-live-2 { animation: boost-cycle 3s ease 1.0s  infinite; }
-  .card-live-3 { animation: boost-cycle 3s ease 1.5s  infinite; }
-  .card-live-4 { animation: boost-cycle 3s ease 2.0s  infinite; }
-  .card-live-5 { animation: boost-cycle 3s ease 2.5s  infinite; }
+  /* animation-fill-mode: both → applies 0% keyframe even during delay,
+     so no card ever shows a transparent/white background phase */
+  .boost-card  { animation: boost-cycle 3s ease both infinite; }
+  .card-live   { animation: boost-cycle 3s ease 0s    both infinite; }
+  .card-live-1 { animation: boost-cycle 3s ease 0.5s  both infinite; }
+  .card-live-2 { animation: boost-cycle 3s ease 1.0s  both infinite; }
+  .card-live-3 { animation: boost-cycle 3s ease 1.5s  both infinite; }
+  .card-live-4 { animation: boost-cycle 3s ease 2.0s  both infinite; }
+  .card-live-5 { animation: boost-cycle 3s ease 2.5s  both infinite; }
 
   /* Soft page-background cycle — more saturated/visible */
   @keyframes page-bg-cycle {
