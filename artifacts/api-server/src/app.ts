@@ -33,15 +33,24 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use("/api", router);
 
-// Serve frontend static files in production (for Render single-service deploy)
-const staticDir = path.resolve(
-  path.dirname(new URL(import.meta.url).pathname),
-  "../../aesthetic-wallpapers/dist/public"
-);
-if (process.env.NODE_ENV === "production" && existsSync(staticDir)) {
+// Serve frontend static files when the built dist exists (Render single-service deploy).
+// Check both possible roots:
+//   1. Relative to import.meta.url (works when node is started from inside api-server/)
+//   2. Relative to process.cwd()  (works when node is started from project root on Render)
+const FRONTEND_REL = "artifacts/aesthetic-wallpapers/dist/public";
+const candidateDirs = [
+  // From project root (Render: `node artifacts/api-server/dist/index.mjs` run at repo root)
+  path.resolve(process.cwd(), FRONTEND_REL),
+  // From dist/ dir: dist/ → api-server/ → artifacts/ → project root (three levels up)
+  path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../..", FRONTEND_REL),
+];
+const staticDir = candidateDirs.find(d => existsSync(d)) ?? null;
+logger.info({ candidateDirs, staticDir }, "Static files directory check");
+
+if (staticDir) {
   app.use(express.static(staticDir, { index: false }));
-  // SPA fallback — all non-API routes return index.html
-  app.get(/^(?!\/api).*$/, (_req, res) => {
+  // SPA fallback — serve index.html for all non-API routes (app.use catches everything)
+  app.use((_req, res) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }
