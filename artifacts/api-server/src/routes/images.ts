@@ -89,8 +89,14 @@ router.get("/images/dashboard", requireUserAuth, async (req, res): Promise<void>
 });
 
 // Social links
+function getUserId(req: any): string | undefined {
+  // JWT token stores userId (from generateUserToken), not id
+  return req.user?.userId ?? req.user?.id ?? undefined;
+}
+
 router.get("/social-links", requireUserAuth, async (req, res): Promise<void> => {
-  const userId = (req as { user?: { id?: string } }).user?.id;
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Cannot determine user" }); return; }
   const links = await query(
     "SELECT id, platform, url, username, created_at FROM social_links WHERE user_id = $1 ORDER BY created_at ASC",
     [userId]
@@ -99,7 +105,8 @@ router.get("/social-links", requireUserAuth, async (req, res): Promise<void> => 
 });
 
 router.post("/social-links", requireUserAuth, async (req, res): Promise<void> => {
-  const userId = (req as { user?: { id?: string } }).user?.id;
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Cannot determine user" }); return; }
   const { platform, url, username } = req.body as { platform?: string; url?: string; username?: string };
   if (!platform || !url) { res.status(400).json({ error: "platform and url are required" }); return; }
   const PLATFORMS = ["Instagram","TikTok","Twitter/X","YouTube","Facebook","Snapchat","Pinterest","LinkedIn","WhatsApp","Telegram","Threads","BeReal","Other"];
@@ -119,7 +126,8 @@ router.post("/social-links", requireUserAuth, async (req, res): Promise<void> =>
 });
 
 router.delete("/social-links/:id", requireUserAuth, async (req, res): Promise<void> => {
-  const userId = (req as { user?: { id?: string } }).user?.id;
+  const userId = getUserId(req);
+  if (!userId) { res.status(401).json({ error: "Cannot determine user" }); return; }
   const { id } = req.params;
   const deleted = await queryOne(
     "DELETE FROM social_links WHERE id = $1 AND user_id = $2 RETURNING id",
@@ -129,14 +137,29 @@ router.delete("/social-links/:id", requireUserAuth, async (req, res): Promise<vo
   res.sendStatus(204);
 });
 
-// All social links for community discover feed
+// All social links for community discover feed — also returns distinct users for "members to follow"
 router.get("/community/social-links", requireUserAuth, async (req, res): Promise<void> => {
   const links = await query(
-    `SELECT sl.id, sl.platform, sl.url, sl.username, u.name as user_name, sl.created_at
+    `SELECT sl.id, sl.platform, sl.url, sl.username, u.name as user_name, u.id as user_id, sl.created_at
      FROM social_links sl JOIN users u ON u.id = sl.user_id
      ORDER BY sl.created_at DESC LIMIT 200`
   );
   res.json(links);
+});
+
+// Distinct members who have added social links (for "members to follow" list)
+router.get("/community/members", requireUserAuth, async (req, res): Promise<void> => {
+  const members = await query(
+    `SELECT DISTINCT ON (u.id) u.id, u.name, u.created_at,
+       sl.platform as top_platform, sl.url as top_url, sl.username as top_username,
+       COUNT(sl2.id) OVER (PARTITION BY u.id) as link_count
+     FROM users u
+     JOIN social_links sl ON sl.user_id = u.id
+     JOIN social_links sl2 ON sl2.user_id = u.id
+     ORDER BY u.id, sl.created_at ASC
+     LIMIT 100`
+  );
+  res.json(members);
 });
 
 // Resolve a Pinterest URL to a direct image URL
